@@ -1,8 +1,20 @@
 package uk.ac.ed.inf.powergrab;
 
-public class Direction {
-	public enum direction {
-		
-	};
-
+public enum Direction
+{
+	N,
+	NNE,
+	NE,
+	E,
+	ESE,
+	SE,
+	SSE,
+	S,
+	SSW,
+	SW,
+	WSW,
+	W,
+	WNW,
+	NW,
+	NNW
 }
