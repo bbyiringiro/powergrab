@@ -1,5 +1,9 @@
 package uk.ac.ed.inf.powergrab;
 
+//import com.mapbox.geojson.Point;
+//import com.mapbox.geojson.gson.*;
+//import com.mapbox.geojson.
+
 /**
  * Hello world!
  *
@@ -15,6 +19,8 @@ public class App
     	int generator = arguments.getGenerator();
     	boolean isStateful = arguments.isStateful();
     	
-        System.out.println(generator);
+//    	Point startPoint = Point.fromLngLat(startPos.longitude, startPos.latitude);
+    	
+    	System.out.print(Direction.values()[0]);
     }
 }
