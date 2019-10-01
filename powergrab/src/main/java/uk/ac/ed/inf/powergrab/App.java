@@ -21,6 +21,10 @@ public class App
     	
 //    	Point startPoint = Point.fromLngLat(startPos.longitude, startPos.latitude);
     	
-    	System.out.print(Direction.values()[0]);
+    	Position position = new Position(0.0, 0.0);
+    	position.nextPosition(Direction.N);
+    	
+    	
+    	System.out.print(Direction.N.ordinal());
     }
 }

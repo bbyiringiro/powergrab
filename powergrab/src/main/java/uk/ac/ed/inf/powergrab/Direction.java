@@ -5,6 +5,7 @@ public enum Direction
 	N,
 	NNE,
 	NE,
+	ENE,
 	E,
 	ESE,
 	SE,
