@@ -8,8 +8,12 @@ package uk.ac.ed.inf.powergrab;
  * Hello world!
  *
  */
+
+
+
 public class App 
 {
+	
     public static void main( String[] args )
     {
     	CommandParser  arguments = new CommandParser(args);
@@ -24,7 +28,5 @@ public class App
     	Position position = new Position(0.0, 0.0);
     	position.nextPosition(Direction.N);
     	
-    	
-    	System.out.print(Direction.N.ordinal());
     }
 }

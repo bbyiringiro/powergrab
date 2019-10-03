@@ -63,8 +63,6 @@ public class AppTest extends TestCase {
 	
 	public void testNextPositionNotIdentity() {
 		Position p1 = p0.nextPosition(Direction.N);
-		System.out.println(p1);
-		System.out.println(p0);
 		assertFalse(approxEq(p0, p1));
 	}
 	
