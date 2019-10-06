@@ -1,4 +1,5 @@
 package uk.ac.ed.inf.powergrab;
+import java.util.EnumMap;
 
 //import com.mapbox.geojson.Point;
 //import com.mapbox.geojson.gson.*;
@@ -27,6 +28,7 @@ public class App
     	
     	Position position = new Position(0.0, 0.0);
     	position.nextPosition(Direction.N);
+    	
     	
     }
 }
