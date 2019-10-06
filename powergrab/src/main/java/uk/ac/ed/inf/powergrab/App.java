@@ -12,8 +12,12 @@ import java.util.EnumMap;
 
 
 
+
 public class App 
 {
+	public static void print(String s) {
+		System.out.println(s);
+	}
 	
     public static void main( String[] args )
     {
@@ -24,10 +28,7 @@ public class App
     	int generator = arguments.getGenerator();
     	boolean isStateful = arguments.isStateful();
     	
-//    	Point startPoint = Point.fromLngLat(startPos.longitude, startPos.latitude);
-    	
-    	Position position = new Position(0.0, 0.0);
-    	position.nextPosition(Direction.N);
+    	print(startPos.toString());
     	
     	
     }

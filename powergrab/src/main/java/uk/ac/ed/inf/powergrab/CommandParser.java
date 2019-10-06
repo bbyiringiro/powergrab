@@ -1,14 +1,30 @@
 package uk.ac.ed.inf.powergrab;
 
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class CommandParser.
+ */
 public class CommandParser {
 	
+	/** The map date. */
 	private Date mapDate;
+	
+	/** The start corridinate. */
 	private Position startCorridinate;
+	
+	/** The generator. */
 	private int generator;
+	
+	/** The is stateful. */
 	private boolean isStateful;
 	
 	
+	/**
+	 * Instantiates a new command parser.
+	 *
+	 * @param args the args
+	 */
 	public CommandParser(String args[]){
 		
 		try {
@@ -18,6 +34,13 @@ public class CommandParser {
 			System.out.print(e);
 		}
 	}
+	
+	/**
+	 * Parses the.
+	 *
+	 * @param args the args
+	 * @throws Exception the exception
+	 */
 	private void parse(String args[]) throws Exception {
 		if (args.length != 7)
 			throw new Exception("This program need sevenn arguments, format....");
@@ -35,15 +58,38 @@ public class CommandParser {
 	
 	}
 	
+	/**
+	 * Gets the map date.
+	 *
+	 * @return the map date
+	 */
 	public Date getMapDate() {
 		return mapDate;
 	}
+	
+	/**
+	 * Gets the start corridinate.
+	 *
+	 * @return the start corridinate
+	 */
 	public Position getStartCorridinate() {
 		return startCorridinate;
 	}
+	
+	/**
+	 * Checks if is stateful.
+	 *
+	 * @return true, if is stateful
+	 */
 	public boolean isStateful() {
 		return isStateful;
 	}
+	
+	/**
+	 * Gets the generator.
+	 *
+	 * @return the generator
+	 */
 	public int getGenerator() {
 		return generator;
 	}
