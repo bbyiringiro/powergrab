@@ -51,7 +51,11 @@ public class Position{
 	{ 
 		double w, h; 
 		Position newPosition;
-		double angle = Math.toRadians(90 - 22.5 * direction.ordinal());
+		double angle;
+		if (direction == null)
+			return this;
+		
+		angle = Math.toRadians(90 - 22.5 * direction.ordinal());
 		
 		w = moveRadius * Math.cos(angle);
 		h = moveRadius * Math.sin(angle);
