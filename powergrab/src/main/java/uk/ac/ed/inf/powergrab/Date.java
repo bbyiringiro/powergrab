@@ -13,12 +13,14 @@ class Date {
 		year = y;
 	}
 	
-	public String formatDate(String delimiter)
+	public String formatDate(String delimiter, boolean reverse)
 	{
 		if (delimiter.equals(""))
 			delimiter ="/";
-		
-		return day+delimiter+month+delimiter+year;
+		if(reverse)
+			return year+delimiter+month+delimiter+day;
+		else
+			return day+delimiter+month+delimiter+year;
 	}
 
 }

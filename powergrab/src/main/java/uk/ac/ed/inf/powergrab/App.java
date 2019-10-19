@@ -24,7 +24,26 @@ import com.mapbox.geojson.Point;
 public class App 
 {
 	public static void print(String s) {
-		System.out.println(s);
+		System.out.print(s);
+	}
+	
+	public static String formatUrl(Date mapDate, String baseUrl, String geoJsonFile) {
+		String mapDateIndex;
+		if(baseUrl.equals("")) {
+			baseUrl = "http://homepages.inf.ed.ac.uk/stg/powergrab/";
+		}
+		
+		if(geoJsonFile.equals("")) {
+			geoJsonFile = "powergrabmap.geojson";
+		}
+		
+		if (mapDate == null) {
+			mapDateIndex = "";
+		}
+		else
+			mapDateIndex =  mapDate.formatDate("", true)+"/";
+		
+		return baseUrl +mapDateIndex+geoJsonFile;
 	}
 	
     public static void main( String[] args )
@@ -35,25 +54,45 @@ public class App
     	Position startPos = arguments.getStartCorridinate();
     	int generator = arguments.getGenerator();
     	boolean isStateful = arguments.isStateful();
+    	String mapUrl = formatUrl(mapDate, "", "");
     	
-    	String mapString = "http://homepages.inf.ed.ac.uk/stg/powergrab/2019/01/01/powergrabmap.geojson";
     	
-    	FeatureCollection fc;
+    	
+    	// get a drone
+    	int moves=1;
+    	double power = 150;
+    	double powerCoins= 150;
+    	
+    	Drone currDrone =  new StatelessDrone(startPos, "statless", generator);
     	
     	try {
-			fc = GeoJsonHandler.readJsonFromURL(mapString);
-			
-			ArrayList<Feature> features =(ArrayList<Feature>) fc.features();
-//			print(features.get(0).properties().toString());
-			Point p = (Point) features.get(0).geometry();
-			print(p.toString());
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+    		currDrone.loadMap(mapUrl);
+    	}
+    	catch (Exception e) {
+			// TODO: handle exception
 		}
+    	
+    	while(moves <= 250 && currDrone.getPower() >= 1.25) {
+    		
+    		// inspect the current state of the map, and current position;
+    		// calculate allowables moves of the drone;
+    		// decide in which direction to move;
+    		//move to your next position, update your position
+    		// charge from the nearest changing station (if in range)
+    		
+    		currDrone.charge(); // charge the drone first in case, it's initialised at a station
+    		Direction nextDir = currDrone.chooseDirection();
+    		currDrone.move(nextDir);
+    		
+    		
+    		++ moves;
+    		currDrone.consumedPower(1.25); 
+    		
+    	}
+    	
+    	
+    	System.out.println("Finished with PowerCoin:"+ currDrone.getPowerCoins() + " Power: "+currDrone.getPower());
+    	System.out.print("moves :"+ (moves-1));
 
     	
     	

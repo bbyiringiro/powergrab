@@ -50,7 +50,6 @@ public class Position{
 	public Position nextPosition(Direction direction) 
 	{ 
 		double w, h; 
-		Position newPosition;
 		double angle;
 		if (direction == null)
 			return this;
@@ -59,13 +58,8 @@ public class Position{
 		
 		w = moveRadius * Math.cos(angle);
 		h = moveRadius * Math.sin(angle);
-		newPosition = new Position(latitude + h,  longitude + w);
-
-		// avoiding an invalid position beforehand
-		if (newPosition.inPlayArea())
-			return newPosition;
-		else
-			return this;			
+		return new Position(latitude + h,  longitude + w);
+		
 	}
 	
 	/**
