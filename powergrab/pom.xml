@@ -26,7 +26,6 @@
       <artifactId>mapbox-sdk-geojson</artifactId>
       <version>4.9.0</version>
     </dependency>
-    
   </dependencies>
 	<build>
 		<plugins>

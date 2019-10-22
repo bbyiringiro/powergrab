@@ -1,5 +1,5 @@
 package uk.ac.ed.inf.powergrab;
-import java.awt.List;
+import java.util.List;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -8,6 +8,7 @@ import java.util.EnumMap;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
+import com.mapbox.geojson.LineString;
 
 //import com.mapbox.geojson.Point;
 //import com.mapbox.geojson.gson.*;
@@ -63,36 +64,68 @@ public class App
     	double power = 150;
     	double powerCoins= 150;
     	
-    	Drone currDrone =  new StatelessDrone(startPos, "statless", generator);
+    	Drone currDrone =  new StatelessDrone(startPos, "stateless", generator);
+    	String mapSource = "";
     	
     	try {
-    		currDrone.loadMap(mapUrl);
+    		mapSource = currDrone.loadMap(mapUrl);
     	}
     	catch (Exception e) {
 			// TODO: handle exception
 		}
     	
+    	List<Point> path = new ArrayList<>();
+    	path.add(Point.fromLngLat(currDrone.getPosition().getLongitude(), currDrone.getPosition().getLatitude()));
+    	String logs = "";
     	while(moves <= 250 && currDrone.getPower() >= 1.25) {
+    		print(moves+"th steps\n");
+    		String logLine="";
+    		Position dronePosition = currDrone.getPosition();
+    		logLine += dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", ";
     		
     		// inspect the current state of the map, and current position;
     		// calculate allowables moves of the drone;
     		// decide in which direction to move;
     		//move to your next position, update your position
     		// charge from the nearest changing station (if in range)
-    		
-    		currDrone.charge(); // charge the drone first in case, it's initialised at a station
+
     		Direction nextDir = currDrone.chooseDirection();
     		currDrone.move(nextDir);
-    		
-    		
+    		currDrone.charge();
     		++ moves;
     		currDrone.consumedPower(1.25); 
+    		
+    		
+    		
+    		
+    		
+    		path.add(Point.fromLngLat(currDrone.getPosition().getLongitude(), currDrone.getPosition().getLatitude()));
+    		logLine +=nextDir + ", " +dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", "+currDrone.getPowerCoins()+", "+currDrone.getPower();
+    		logs +=logLine+"\n";
+    		
+    		
+    		
+    		print("----------------------------------------------------------------------------------------------\n");
     		
     	}
     	
     	
     	System.out.println("Finished with PowerCoin:"+ currDrone.getPowerCoins() + " Power: "+currDrone.getPower());
     	System.out.print("moves :"+ (moves-1));
+    	
+    	LineString pathLineStrign = LineString.fromLngLats(path);
+    	
+    	Feature outFeature = Feature.fromGeometry(pathLineStrign);
+    	FeatureCollection fc = FeatureCollection.fromJson(mapSource);
+    	List<Feature> features = (ArrayList<Feature>) fc.features();
+    	features.add(outFeature);
+    	FeatureCollection out = FeatureCollection.fromFeatures(features);
+    	mapSource = out.toJson();
+    	
+    	String filename = currDrone.getTyep() +"-"+mapDate.formatDate("-", false);
+    	Logger.saveJson(mapSource, filename);
+    	Logger.saveLogs(logs, filename);
+    	
 
     	
     	

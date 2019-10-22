@@ -3,17 +3,23 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.URLConnection;
 
+import javax.naming.Context;
+
 import java.net.HttpURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.Geometry;
 import com.mapbox.geojson.Point;
-import com.mapbox.geojson.LineString;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class GeoJsonHandler{
@@ -22,7 +28,7 @@ public class GeoJsonHandler{
 //		mapString = mapURL;
 	}
 	
-	public static FeatureCollection readJsonFromURL(String url) throws MalformedURLException, IOException {
+	public static String readJsonFromURL(String url) throws MalformedURLException, IOException {
 		
 		InputStream inputStream;
 //		try 
@@ -34,18 +40,18 @@ public class GeoJsonHandler{
 			request.setRequestMethod("GET");
 			request.setDoInput(true);
 			request.connect();
+//			try
 			inputStream = request.getInputStream();
 			JsonParser jp = new JsonParser();
 			JsonElement root = jp.parse(new InputStreamReader(inputStream));
 			
 			String mapSource = root.toString();
-			FeatureCollection result =FeatureCollection.fromJson(mapSource);
 			inputStream.close();
+//			catch
 			
 			
 			
-			
-			return result;
+			return mapSource;
 //		}
 //		catch(MalformedURLException e) 
 //		{
@@ -61,10 +67,8 @@ public class GeoJsonHandler{
 		
 	}
 	
-	public void parse() {
-		
-		
-	}
+	
+  
 	
 	
 	

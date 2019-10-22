@@ -25,8 +25,8 @@ abstract class Drone {
 		currentPos = pos;
 		this.type = type;
 		rnd = new Random(seed);
-		power = 125.0;
-		powerCoin = 125.0;
+		power = 250.0;
+		powerCoin = 0.0;
 		
 	}
 	
@@ -37,6 +37,10 @@ abstract class Drone {
 	}
 	public double getPowerCoins() {
 		return powerCoin;
+	}
+	
+	public String getTyep() {
+		return type;
 	}
 	public void consumedPower(double p) {
 		
@@ -163,13 +167,14 @@ abstract class Drone {
 		return Math.sqrt(x2+y2);
 	}
 
-	public void loadMap(String mapUrl) {
+	public String loadMap(String mapUrl) {
 		// TODO Auto-generated method stub
 		FeatureCollection fc;
+		String mapSource="";
     	
     	try {
-			fc = GeoJsonHandler.readJsonFromURL(mapUrl);
-			
+			mapSource = GeoJsonHandler.readJsonFromURL(mapUrl);
+			fc  = FeatureCollection.fromJson(mapSource);
 			mapFeatures =(ArrayList<Feature>) fc.features();
 //			print(features.get(0).properties().toString());
 //			Point p = (Point) features.get(0).geometry();
@@ -181,6 +186,7 @@ abstract class Drone {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    	return mapSource;
 		
 	}
 	
