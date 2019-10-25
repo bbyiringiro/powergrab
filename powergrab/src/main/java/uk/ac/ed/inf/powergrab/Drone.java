@@ -16,7 +16,6 @@ abstract class Drone {
 	double powerCoin;
 	String type;
 	Position currentPos;
-	Direction direction;
 	protected  Random rnd;
 	protected ArrayList<Feature> mapFeatures;
 	
@@ -122,7 +121,7 @@ abstract class Drone {
 		System.out.println("After Station -> Coins: "+station.properties().get("coins").getAsDouble()+" power: "+station.properties().get("power").getAsDouble());
 	}
 	
-	private int ClosestStation() {
+	protected int ClosestStation() {
 		double tempDistance;
 		int closest_idx = 0;
 		double closestDistance  = calcDistance( (Point) mapFeatures.get(closest_idx).geometry());
@@ -139,7 +138,7 @@ abstract class Drone {
 	}
 	
 	
-	private void addPowerCoins(double coins) {
+	protected void addPowerCoins(double coins) {
 		double temp = powerCoin + coins;
 		if (temp<0)
 			powerCoin = 0;
@@ -147,7 +146,7 @@ abstract class Drone {
 			powerCoin = temp;
 	}
 	
-	private void addPower(double p) {
+	protected void addPower(double p) {
 		double temp = power + p;
 		if (temp<0)
 			power = 0;

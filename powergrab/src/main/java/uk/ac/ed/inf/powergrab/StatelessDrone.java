@@ -29,7 +29,7 @@ public class StatelessDrone extends Drone {
 		
 		
 		if (stations_idx.size() == 0) 
-		{
+		{					
 			nextDir = possibleMoveDir.get(rnd.nextInt(n));
 			System.out.println("Choose location randomly 0");
 			return nextDir;	
@@ -49,7 +49,7 @@ public class StatelessDrone extends Drone {
 			}
 
 		});
-		
+	
 		for (int l=0; l<stations_idx.size(); ++l)
 		{
 			if(evaluateUtility(mapFeatures.get(stations_idx.get(l)))>=0)
@@ -65,7 +65,7 @@ public class StatelessDrone extends Drone {
 		if (stations_idx.size() >1)
 			System.out.println("second"+evaluateUtility(mapFeatures.get(stations_idx.get(1))));
 		System.out.println(evaluateUtility(mapFeatures.get(stations_idx.get(0))));
-		if (evaluateUtility(mapFeatures.get(stations_idx.get(0))) == 0 && stations_idx.size() ==1)
+		if (evaluateUtility(mapFeatures.get(best_closer_station)) == 0 && stations_idx.size() == 1) // this is to prevent the situation when you sort zero the first but there other negative station in the regiion (0.003) and choosing randomly for all possible location you can bump into them
 			{
 			nextDir = possibleMoveDir.get(rnd.nextInt(n));
 			System.out.println("Choose location randomly 1");
@@ -77,15 +77,15 @@ public class StatelessDrone extends Drone {
 			List<Direction> copyOfPossibleMoveDir = new ArrayList<>(possibleMoveDir);
 			System.out.println("all stations in range are either negative or zero in utility");
 			System.out.println(copyOfPossibleMoveDir.size() +"before worst direction");
-			int directiosize;
+			int directionsize;
 			int newSize;
 			do {
-				directiosize = copyOfPossibleMoveDir.size();
+				directionsize = copyOfPossibleMoveDir.size();
 				for(int k=0; k<stations_idx.size(); ++k) {
 				 copyOfPossibleMoveDir.remove(moveAwayDirections(copyOfPossibleMoveDir, stations_idx.get(k)));
 				}
 				newSize = copyOfPossibleMoveDir.size();
-			 }while((newSize != directiosize) && newSize>0);
+			 }while((newSize != directionsize) && newSize>0);
 			
 			System.out.println(copyOfPossibleMoveDir.size() +"remove worst directions");
 			n = copyOfPossibleMoveDir.size();
@@ -94,7 +94,7 @@ public class StatelessDrone extends Drone {
 			if (n==0) { // rare but in case all direction goes to negative stations
 				// get closer to the least negative utility station
 				System.out.println("negative stations in all directions");
-				nextDir = closerDirection(possibleMoveDir, stations_idx.get(0));
+				nextDir = closerDirection(possibleMoveDir, stations_idx.get(0), new ArrayList<Integer>()).get(0); // give it empty bad array station.. coz all are bad
 				System.out.println("Choose location randomly 4");
 				return nextDir;
 			}
@@ -105,34 +105,91 @@ public class StatelessDrone extends Drone {
 			return nextDir;	
 		}
 		else {
-			nextDir = closerDirection (possibleMoveDir, best_closer_station);
+			List<Direction> chooseBestDri = closerDirection (possibleMoveDir, best_closer_station, neg_stations);
+			nextDir = chooseBestDri.get(rnd.nextInt(chooseBestDri.size()));
 			System.out.println("Choose wisely 3");
 			return nextDir;
 		}
 		
 	}
 	
-	public Direction closerDirection(List<Direction> directions, int station_idx) {
+	public List<Direction> closerDirection(List<Direction> directions, int station_idx, List<Integer> badStation) {
+		
+		List<Direction> chooseDirection = new ArrayList<>();		
+		
+		
+		// experimental ...
+		// remove directions that takes me to bad stations
+		int directionsize;
+		int newSize;
+//		
+		do {
+			directionsize = directions.size();
+			for(int k=0; k<badStation.size(); ++k) {
+				directions.remove(moveAwayDirections(directions, badStation.get(k)));
+			}
+			newSize = directions.size();
+		 }while((newSize != directionsize) && newSize>0);
+//		
 		
 		// choosing the direction that a give me closor to a point;
-		int n = directions.size();
-		int tempDirIndex= rnd.nextInt(n);
-		Direction nextDir = directions.get(tempDirIndex);
+				int n = directions.size();
+				int tempDirIndex= rnd.nextInt(n);
+				Direction nextDir = directions.get(tempDirIndex);
+				System.out.println("temp Direction "+nextDir);
+		
+				
 
-//				System.out.println(nextDir);
+				System.out.println("size of bad stations :"+badStation.size());
 				double tempDistance;
 				double minDist = calcDistance(currentPos.nextPosition(directions.get(tempDirIndex)), (Point) mapFeatures.get(station_idx).geometry());
+				boolean changed = false;
 //				System.out.println(minDist);
 				for (int j=0; j<n; ++j) {
 					tempDistance = calcDistance(currentPos.nextPosition(directions.get(j)), (Point) mapFeatures.get(station_idx).geometry());
-					if(minDist > tempDistance) {
+					// need to be adjusted when 0.0 station are not affecting the randomness  of location or 
+					// 
+					boolean nearbad=false;
+					if(badStation.size()>0) {
+					 
+					 for (int k=0; k <badStation.size(); ++k)
+					 {
+						 double distToNearestBad = calcDistance(currentPos.nextPosition(directions.get(j)), (Point) mapFeatures.get(badStation.get(k)).geometry());
+						 System.out.println("dist to bad station "+distToNearestBad +" if we go "+directions.get(j));
+						 if(distToNearestBad <0.00025) {
+							 nearbad= true;	 
+							 break;
+							 // this will require to change else if for the case when no better location is found; // need more thinking
+						 }
+					 }
+					}
+					System.out.println(tempDistance +" "+directions.get(j));
+					if(tempDistance < 0.00025 && !nearbad) {
+						System.out.println(tempDistance);
+						chooseDirection.add(directions.get(j));
+//						changed = true;
+					}
+					
+					if(tempDistance < minDist) {
 //						System.out.println(tempDistance);
 						minDist = tempDistance;
 						nextDir = directions.get(j);
+						changed = true;
 					}
 				}
+				
+				if (!changed) {
+					System.out.println("initial random position was never changed");
+				}
+//				chooseDirection
+				if(chooseDirection.size() ==0) {
+					System.out.println(minDist);
+					chooseDirection.add(nextDir);
+					
+				}
+				
 		
-		return nextDir;
+		return chooseDirection;
 	}
 	
 	public Direction moveAwayDirections(List<Direction> directions, int station_idx) {
@@ -145,7 +202,7 @@ public class StatelessDrone extends Drone {
 //				System.out.println(minDist);
 				for (int j=0; j<n; ++j) {
 					tempDistance = calcDistance(currentPos.nextPosition(directions.get(j)), (Point) mapFeatures.get(station_idx).geometry());
-					if(tempDistance <= 0.00025) {
+					if(tempDistance < 0.00025) {
 						return directions.get(j);
 					}
 				}

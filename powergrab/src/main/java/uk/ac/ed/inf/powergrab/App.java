@@ -61,10 +61,8 @@ public class App
     	
     	// get a drone
     	int moves=1;
-    	double power = 150;
-    	double powerCoins= 150;
     	
-    	Drone currDrone =  new StatelessDrone(startPos, "stateless", generator);
+    	Drone currDrone =  new StatefulDrone(startPos, "stateful", generator);
     	String mapSource = "";
     	
     	try {
@@ -88,10 +86,12 @@ public class App
     		// decide in which direction to move;
     		//move to your next position, update your position
     		// charge from the nearest changing station (if in range)
-
+    		
     		Direction nextDir = currDrone.chooseDirection();
+    		System.out.println(nextDir);
     		currDrone.move(nextDir);
     		currDrone.charge();
+    		
     		++ moves;
     		currDrone.consumedPower(1.25); 
     		
