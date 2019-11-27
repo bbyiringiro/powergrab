@@ -3,7 +3,6 @@ import java.util.Random;
 
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.geojson.Geometry;
 import com.mapbox.geojson.Point;
 
 import java.util.List;
@@ -29,7 +28,8 @@ abstract class Drone {
 		
 	}
 	
-	abstract public Direction chooseDirection();
+	abstract public Direction Decide(List<Direction> possibleDirection, StationsMap stationsMap);
+	abstract protected double evaluateUtility(Station station);
 	
 	public double getPower() {
 		return power;
@@ -54,71 +54,49 @@ abstract class Drone {
 		return currentPos;
 	}
 	
-	protected List<Direction> getPossibleMoves() {
-		List<Direction> moves = new ArrayList<>();
-		for(int i=0; i < Direction.values().length; ++i) {
-			Direction dirMove = Direction.values()[i];
-			Position pos = currentPos.nextPosition(dirMove);
-			if (pos.inPlayArea()) 
-				moves.add(dirMove);
-		}	
-		return moves;
-	}
-	
-	
 	public Position move(Direction to) {
 		Position nextPos = currentPos.nextPosition(to);
 		currentPos = nextPos;
 		return currentPos;	
 	}
 	
-	public void inspectAndDecide (String map) {
+	public void charge(StationsMap stationsMap) {
+		String sId = stationsMap.getClosestStation(this.getPosition());
 		
-	}
-	
-	
-	
-	public void charge() {
-		
-		
-		int closestStation = ClosestStation();
-		double distance = calcDistance( (Point) mapFeatures.get(closestStation).geometry());
+		double distance = StationsMap.calcDistance(this.getPosition(), stationsMap.getStationById(sId).getPosition());
 //		System.out.println(currentPos.toString());
 //		System.out.println(closestStation.geometry().toString());
 //		System.out.println(distance);
 		
 		if(distance >= 0.00025)
 			return;
-		Feature station = mapFeatures.get(closestStation);
-		
-		double station_power = station.properties().get("power").getAsDouble();
-		double station_coins = station.properties().get("coins").getAsDouble();
+		double station_power = stationsMap.getStationById(sId).getPower();
+		double station_coins = stationsMap.getStationById(sId).getCoins();
 		System.out.println("Station -> Coins: "+station_coins+" power: "+station_power);
 		System.out.println("Before Drone -> Coins: "+powerCoin+" power: "+power);
 		// at the station now
 		if(station_coins < 0) {
 			if ((power + station_power) < 0)
-				station.addNumberProperty("power", power + station_power);
+				stationsMap.getStationById(sId).setPower(this.power + station_power);
 			else
-				station.addNumberProperty("power", 0);
+				stationsMap.getStationById(sId).setPower(0);
 			
 			if ((powerCoin + station_coins) < 0)
-				station.addNumberProperty("coins", powerCoin + station_coins);
+				stationsMap.getStationById(sId).setCoins(this.powerCoin + station_coins);
 			else
-				station.addNumberProperty("coins", 0);
+				stationsMap.getStationById(sId).setCoins(0);
 		}
 		else {
-			station.addNumberProperty("coins", 0);
-			station.addNumberProperty("power", 0);
+			stationsMap.getStationById(sId).setCoins(0);
+			stationsMap.getStationById(sId).setPower(0);
 			
 		}
 		
 		addPower(station_power);
 		addPowerCoins(station_coins);
-		mapFeatures.set(closestStation, station);
 		System.out.println("After Drone -> Coins: "+powerCoin+" power: "+power);
 		System.out.println("charged");
-		System.out.println("After Station -> Coins: "+station.properties().get("coins").getAsDouble()+" power: "+station.properties().get("power").getAsDouble());
+		System.out.println("After Station -> Coins: "+stationsMap.getStationById(sId).getCoins()+" power: "+stationsMap.getStationById(sId).getPower());
 	}
 	
 	protected int ClosestStation() {
@@ -170,7 +148,7 @@ abstract class Drone {
 		// TODO Auto-generated method stub
 		FeatureCollection fc;
 		String mapSource="";
-    	
+    
     	try {
 			mapSource = GeoJsonHandler.readJsonFromURL(mapUrl);
 			fc  = FeatureCollection.fromJson(mapSource);
@@ -189,14 +167,16 @@ abstract class Drone {
 		
 	}
 	
+	
+	
+	
+	
+	
+	
+	
 }
 
 
-//inspect the current state of the map, and current position;
-// calculate allowables moves of the drone;
-// decide in which direction to move;
-//move to your next position, update your position
-// charge from the nearest changing station (if in range)
 
 
 //logs

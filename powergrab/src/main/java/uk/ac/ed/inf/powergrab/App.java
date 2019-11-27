@@ -58,40 +58,43 @@ public class App
     	String mapUrl = formatUrl(mapDate, "", "");
     	
     	
+ 
+
+    	Drone currDrone;
+    	if (isStateful)
+    		currDrone =  new StatefulDrone(startPos, "stateful", generator);
+    	else
+    		currDrone =  new StatelessDrone(startPos, "stateless", generator);
     	
-    	// get a drone
-    	int moves=1;
-    	
-    	Drone currDrone =  new StatefulDrone(startPos, "stateful", generator);
     	String mapSource = "";
-    	
+    	int moves=1;
     	try {
     		mapSource = currDrone.loadMap(mapUrl);
     	}
     	catch (Exception e) {
 			// TODO: handle exception
 		}
-    	
+    	StationsMap stationsMap = new StationsMap(mapUrl);
     	List<Point> path = new ArrayList<>();
     	path.add(Point.fromLngLat(currDrone.getPosition().getLongitude(), currDrone.getPosition().getLatitude()));
     	String logs = "";
     	while(moves <= 250 && currDrone.getPower() >= 1.25) {
     		print(moves+"th steps\n");
     		String logLine="";
+    		// inspect the map, and current position
     		Position dronePosition = currDrone.getPosition();
     		logLine += dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", ";
+    		// allowable moves
+    		List<Direction> possibleMoveDir = stationsMap.getPossibleMoves(dronePosition);
     		
-    		// inspect the current state of the map, and current position;
-    		// calculate allowables moves of the drone;
-    		// decide in which direction to move;
-    		//move to your next position, update your position
-    		// charge from the nearest changing station (if in range)
-    		
-    		Direction nextDir = currDrone.chooseDirection();
+    		// Decide
+    		Direction nextDir = currDrone.Decide(possibleMoveDir, stationsMap);
     		System.out.println(nextDir);
+    		// Move
     		currDrone.move(nextDir);
-    		currDrone.charge();
-    		
+    		//Charge
+    		currDrone.charge(stationsMap);
+    	
     		++ moves;
     		currDrone.consumedPower(1.25); 
     		
