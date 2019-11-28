@@ -1,9 +1,6 @@
 package uk.ac.ed.inf.powergrab;
 import java.util.List;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.EnumMap;
 
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
@@ -49,7 +46,7 @@ public class App
 	
     public static void main( String[] args )
     {
-    	CommandParser  arguments = new CommandParser(args);
+    	CommandArgsParser  arguments = new CommandArgsParser(args);
     	
     	Date mapDate = arguments.getMapDate();
     	Position startPos = arguments.getStartCorridinate();
@@ -94,7 +91,7 @@ public class App
     		currDrone.move(nextDir);
     		//Charge
     		currDrone.charge(stationsMap);
-    	
+    		
     		++ moves;
     		currDrone.consumedPower(1.25); 
     		
@@ -111,7 +108,6 @@ public class App
     		print("----------------------------------------------------------------------------------------------\n");
     		
     	}
-    	
     	
     	System.out.println("Finished with PowerCoin:"+ currDrone.getPowerCoins() + " Power: "+currDrone.getPower());
     	System.out.print("moves :"+ (moves-1));

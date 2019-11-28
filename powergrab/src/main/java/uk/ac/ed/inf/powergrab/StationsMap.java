@@ -13,7 +13,7 @@ import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
 
 public class StationsMap {
-	public HashMap<String, Station> stationsMap;
+	public Map<String, Station> stationsMap;
 	
 	public StationsMap(String mapUrl) {
 		loadMap(mapUrl);
@@ -42,7 +42,7 @@ public class StationsMap {
 		
 	}
 	
-	public List<String> getStationWithIn(Position dronePosition, double range){
+	public List<String> getStationsWithIn(Position dronePosition, double range){
 		double tempDistance;
 		List<String> stationsInRangeIds = new ArrayList<>();
 		for(String stationId: getAllStations()) {

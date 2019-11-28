@@ -35,7 +35,6 @@ public class Logger {
 			byte[] bytes = logs.getBytes();
             out.write(bytes);
             out.close();
- 
         } catch (IOException e) {
             e.printStackTrace();
         }

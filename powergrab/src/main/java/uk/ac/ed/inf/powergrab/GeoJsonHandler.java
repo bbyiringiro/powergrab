@@ -1,25 +1,11 @@
 package uk.ac.ed.inf.powergrab;
 import java.net.URL;
 import java.net.MalformedURLException;
-import java.net.URLConnection;
-
-import javax.naming.Context;
-
 import java.net.HttpURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-
-import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.Geometry;
-import com.mapbox.geojson.Point;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class GeoJsonHandler{
@@ -73,22 +59,3 @@ public class GeoJsonHandler{
 	
 	
 }
-
-
-
-
-
-//
-//// Convert to a JSON object to print data
-//JsonParser jp = new JsonParser(); //from gson
-//JsonElement root = jp.parse(new InputStreamReader((InputStream) request.getContent())); //Convert the input stream to a json element
-//JsonObject rootobj = root.getAsJsonObject(); //May be an array, may be an object. 
-//String zipcode = rootobj.get("zip_code").getAsString(); //just grab the zipcode
-
-
-
-
-
-//https://docs.mapbox.com/help/troubleshooting/working-with-large-geojson-data/
-
-//https://docs.mapbox.com/ios/api/maps/3.5.0-beta.2/working-with-geojson-data.html
