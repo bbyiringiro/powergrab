@@ -14,15 +14,16 @@ import com.mapbox.geojson.Point;
 
 public class StationsMap {
 	public Map<String, Station> stationsMap;
-	
+	private String mapSource;
+
 	public StationsMap(String mapUrl) {
 		loadMap(mapUrl);
 	}
 	
 	private void loadMap(String mapUrl) {
 		stationsMap = new HashMap<>();
+		mapSource = "";
     	FeatureCollection fc;
-		String mapSource="";
     	try {
 			mapSource = GeoJsonHandler.readJsonFromURL(mapUrl);
 		} catch (MalformedURLException e) {
@@ -41,6 +42,8 @@ public class StationsMap {
 
 		
 	}
+	
+
 	
 	public List<String> getStationsWithIn(Position dronePosition, double range){
 		double tempDistance;
@@ -81,7 +84,7 @@ public class StationsMap {
 	
 	
 	
-	public String getClosestStation(Set<String> stations, Position position)
+	public String getClosestStation(List<String> stations, Position position)
 	{
 		double closestDist = Double.MAX_VALUE;
 		String closestSId="";
@@ -97,6 +100,13 @@ public class StationsMap {
 		}
 		
 		return closestSId;
+	}
+	
+	
+	
+
+	public String getMapSource() {
+		return mapSource;
 	}
 	
 	
@@ -119,6 +129,27 @@ public class StationsMap {
 		double x2 = Math.pow(pos2.getLatitude() - pos1.getLatitude(), 2);
 		double y2 = Math.pow(pos2.getLongitude() - pos1.getLongitude(), 2);
 		return Math.sqrt(x2+y2);
+	}
+	
+	
+	
+	Direction getCloserDirectionTo(String fromStationID, String toStationId, List<Direction> possibleDirections) {
+		Direction nextDir;
+		Position fromStation = getStationById(fromStationID).getPosition();
+		Position toStation = getStationById(toStationId).getPosition();
+		nextDir = possibleDirections.get(0);
+		double minDist = StationsMap.calcDistance(fromStation.nextPosition(nextDir), toStation);
+		for(Direction dir: possibleDirections) {
+			double tempDist = StationsMap.calcDistance(fromStation.nextPosition(dir), toStation);
+			if(tempDist < minDist) {
+				nextDir = dir;
+				minDist = tempDist;
+			}
+		
+		}
+		return nextDir;
+		
+		
 	}
 
 

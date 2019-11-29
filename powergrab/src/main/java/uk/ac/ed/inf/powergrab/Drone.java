@@ -1,13 +1,7 @@
 package uk.ac.ed.inf.powergrab;
 import java.util.Random;
-
 import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.FeatureCollection;
-import com.mapbox.geojson.Point;
-
 import java.util.List;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 
 abstract class Drone {
@@ -95,24 +89,7 @@ abstract class Drone {
 		addPower(station_power);
 		addPowerCoins(station_coins);
 		System.out.println("After Drone -> Coins: "+powerCoin+" power: "+power);
-		System.out.println("charged");
 		System.out.println("After Station -> Coins: "+stationsMap.getStationById(sId).getCoins()+" power: "+stationsMap.getStationById(sId).getPower());
-	}
-	
-	protected int ClosestStation() {
-		double tempDistance;
-		int closest_idx = 0;
-		double closestDistance  = calcDistance( (Point) mapFeatures.get(closest_idx).geometry());
-		for(int i=1; i<mapFeatures.size();  ++i) {
-			tempDistance = calcDistance((Point)mapFeatures.get(i).geometry());
-			if( tempDistance < closestDistance) {
-				closestDistance = tempDistance;
-				closest_idx = i;
-			}
-				
-		}
-		
-		return closest_idx;
 	}
 	
 	
@@ -131,47 +108,9 @@ abstract class Drone {
 		else
 			power = temp;
 	}
+	
+	
 
-	public double calcDistance(Point point) {
-		double x2 = Math.pow(point.latitude() - currentPos.getLatitude(), 2);
-		double y2 = Math.pow(point.longitude() - currentPos.getLongitude(), 2);
-		return Math.sqrt(x2+y2);
-	}
-	
-	public double calcDistance(Position pos, Point point) {
-		double x2 = Math.pow(point.latitude() - pos.getLatitude(), 2);
-		double y2 = Math.pow(point.longitude() - pos.getLongitude(), 2);
-		return Math.sqrt(x2+y2);
-	}
-
-	public String loadMap(String mapUrl) {
-		// TODO Auto-generated method stub
-		FeatureCollection fc;
-		String mapSource="";
-    
-    	try {
-			mapSource = GeoJsonHandler.readJsonFromURL(mapUrl);
-			fc  = FeatureCollection.fromJson(mapSource);
-			mapFeatures =(ArrayList<Feature>) fc.features();
-//			print(features.get(0).properties().toString());
-//			Point p = (Point) features.get(0).geometry();
-//			System.out.print(p.toString());
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	return mapSource;
-		
-	}
-	
-	
-	
-	
-	
-	
 	
 	
 }

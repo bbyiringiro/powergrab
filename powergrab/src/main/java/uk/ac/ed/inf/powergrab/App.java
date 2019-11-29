@@ -55,7 +55,6 @@ public class App
     	String mapUrl = formatUrl(mapDate, "", "");
     	
     	
- 
 
     	Drone currDrone;
     	if (isStateful)
@@ -63,14 +62,9 @@ public class App
     	else
     		currDrone =  new StatelessDrone(startPos, "stateless", generator);
     	
-    	String mapSource = "";
+
     	int moves=1;
-    	try {
-    		mapSource = currDrone.loadMap(mapUrl);
-    	}
-    	catch (Exception e) {
-			// TODO: handle exception
-		}
+    	
     	StationsMap stationsMap = new StationsMap(mapUrl);
     	List<Point> path = new ArrayList<>();
     	path.add(Point.fromLngLat(currDrone.getPosition().getLongitude(), currDrone.getPosition().getLatitude()));
@@ -113,6 +107,9 @@ public class App
     	System.out.print("moves :"+ (moves-1));
     	
     	LineString pathLineStrign = LineString.fromLngLats(path);
+    	
+    	String mapSource = stationsMap.getMapSource();
+    	
     	
     	Feature outFeature = Feature.fromGeometry(pathLineStrign);
     	FeatureCollection fc = FeatureCollection.fromJson(mapSource);
