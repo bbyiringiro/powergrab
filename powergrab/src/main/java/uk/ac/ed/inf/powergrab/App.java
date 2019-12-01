@@ -77,6 +77,8 @@ public class App
     		logLine += dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", ";
     		// allowable moves
     		List<Direction> possibleMoveDir = stationsMap.getPossibleMoves(dronePosition);
+    		if(possibleMoveDir.size() == 0)
+    			break;
     		
     		// Decide
     		Direction nextDir = currDrone.Decide(possibleMoveDir, stationsMap);
@@ -87,7 +89,7 @@ public class App
     		currDrone.charge(stationsMap);
     		
     		++ moves;
-    		currDrone.consumedPower(1.25); 
+    		currDrone.consumedPower(1.25f); 
     		
     		
     		
@@ -118,7 +120,7 @@ public class App
     	FeatureCollection out = FeatureCollection.fromFeatures(features);
     	mapSource = out.toJson();
     	
-    	String filename = currDrone.getTyep() +"-"+mapDate.formatDate("-", false);
+    	String filename = currDrone.getType() +"-"+mapDate.formatDate("-", false);
     	Logger.saveJson(mapSource, filename);
     	Logger.saveLogs(logs, filename);
     	

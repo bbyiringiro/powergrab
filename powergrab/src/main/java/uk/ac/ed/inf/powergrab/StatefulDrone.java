@@ -7,48 +7,114 @@ import java.util.List;
 import java.util.Set;
 
 public class StatefulDrone extends Drone {
-	
-	public ArrayList<Integer> positiveStation;
-	public ArrayList<Integer> negativeStation;
-	private EvictingQueue<Direction> memory;
-	private int target_index = 0;
-	private int counter =0;
-	private int moves_counter = 1;
+	final int DIRECTION_MEMORY_SIZE = 4;
+	private EvictingQueue<Direction> directionsMemory;
+	private int target_index = 0; // default target (index of max utility station)
+	private int movesCounter = 0;
 	private ArrayList<Position> voidPlaces;
+	
+	static private class EvictingQueue<K> extends ArrayList<K> {
+		private static final long serialVersionUID = -7598907934193826633L;
+		private int maxSize;
+
+	    public EvictingQueue(int size){
+	        this.maxSize = size;
+	    }
+
+	    public boolean add(K k){
+	        boolean r = super.add(k);
+	        if (size() > maxSize){
+	            removeRange(0, size() - maxSize);
+	        }
+	        return r;
+	    }
+	}
 	
 	public StatefulDrone(Position startPos, String type, int seed) {
 		super(startPos, seed, type);
-		memory = new EvictingQueue<>(4);
+		directionsMemory = new EvictingQueue<Direction>(DIRECTION_MEMORY_SIZE);
 		voidPlaces = new ArrayList<>();
 	}
 	
 	@Override
 	public Direction Decide(List<Direction> possibleDirections, StationsMap stationsMap) {
 		printMemory();
-		++moves_counter;
+		movesCounter++;
+		Direction nextDir;
+		ArrayList<Direction> removeDirs = new ArrayList<>();
+		List<String> stationsInRange = new ArrayList<>();
+		List<Direction> initialDirections = new ArrayList<>(possibleDirections);
+		List<String> stationsAround  = stationsMap.getStationsWithIn(this.getPosition(), 0.00055);
+		List<String> stationsToVisit = scanRemainingStations(stationsMap);
 		
-		
-		if(isCycle()) {
+		if(stationsToVisit.size() == 0) {
+			for(int i=0; i<possibleDirections.size(); ++i) {
+				Direction   dir = possibleDirections.get(i);
+				Position tempNextPos = this.getPosition().nextPosition(dir);
+				stationsInRange  = stationsMap.getStationsWithIn(stationsAround, tempNextPos, 0.00025); // improvement check only ones in earlier within range
+				if(stationsInRange.size()==0) 
+					continue;
+				
+				String closestSId = stationsMap.getClosestStation(stationsInRange, tempNextPos);
+				Station closestStation  = stationsMap.getStationById(closestSId);
+				float closestStationUtility = evaluateUtility(closestStation);
+				if(closestStationUtility <0) 
+					removeDirs.add(dir);
+			}
+			eliminateNegDirections(removeDirs, possibleDirections);
+			if(possibleDirections.size() != 0)
+				nextDir =possibleDirections.get(rnd.nextInt(possibleDirections.size()));
+			else 
+				nextDir = initialDirections.get(rnd.nextInt(initialDirections.size()));
+		}else {
 			
-			Position voidPlace = currentPos.nextPosition(memory.get(0));
-			voidPlaces.add(voidPlace);
-			voidPlaces.add(getPosition());
+			if(cycleHappened()) {
+				Position voidPlace = currentPos.nextPosition(directionsMemory.get(0));
+				voidPlaces.add(voidPlace);
+				voidPlaces.add(getPosition());
+			}
+			
+			
+			String targetId= getNextTarget(stationsToVisit, stationsMap,target_index);
+			Station targetStation  = stationsMap.getStationById(targetId);
+			Position targetPosition = targetStation.getPosition();
+			
+			for(int i=0; i<possibleDirections.size(); ++i) {
+				Direction   dir = possibleDirections.get(i);
+				
+				Position tempNextPos = this.getPosition().nextPosition(dir);
+				stationsInRange  = stationsMap.getStationsWithIn(stationsAround, tempNextPos, 0.00025);
+				if(stationsInRange.size()==0) 
+				{
+					leadToCycleCheck(tempNextPos, dir, removeDirs);
+					continue;
+				}
+				double distanceToTarget = StationsMap.calcDistance(tempNextPos, targetPosition);
+				String closestSId = stationsMap.getClosestStation(stationsInRange, tempNextPos);
+				Station closestStation  = stationsMap.getStationById(closestSId);
+				float closestStationUtility = evaluateUtility(closestStation);
+				double distanceToclosestStation = StationsMap.calcDistance(tempNextPos, closestStation.getPosition());
+				if(closestStationUtility <0)
+					removeDirs.add(dir);
+				else if(closestStationUtility == 0 && distanceToTarget < 0.00025 && distanceToclosestStation < distanceToTarget)
+					removeDirs.add(dir);
+				
+				leadToCycleCheck(tempNextPos, dir, removeDirs);
+			}
+			eliminateNegDirections(removeDirs, possibleDirections);
+			if(possibleDirections.size()==0)
+				nextDir = getBestDirection(getPosition(), targetPosition, initialDirections);	
+			else 
+				nextDir = getBestDirection(getPosition(), targetPosition, possibleDirections);
 		}
 		
-		if(counter >0)
-			--counter;
-		else
-			target_index =0;
-		Direction nextDir;
-		List<Direction> dirsCopy = new ArrayList<>(possibleDirections);
-		Set<String> allStation = new HashSet<>(stationsMap.getAllStations());
+		directionsMemory.add(nextDir);
+		return nextDir;
+	}
+	
+	private List<String> scanRemainingStations(StationsMap stationsMap){
 		List<String> positiveStations = new ArrayList<>();
-		
-		List<String> stationsInRange  = stationsMap.getStationsWithIn(this.getPosition(), 0.00055);
-		List<String> negStations = new ArrayList<>();
-		List<String> noneNegativeStations = new ArrayList<String>();
-		ArrayList<Direction> removeDirs = new ArrayList<>();
-
+		Set<String> allStation = new HashSet<>(stationsMap.getAllStations());
 		for(String sId: allStation){
 			Station tempStation = stationsMap.getStationById(sId);
 			double tempUtil = evaluateUtility(tempStation);
@@ -58,233 +124,29 @@ public class StatefulDrone extends Drone {
 			}
 		}
 		
-		
-		for(String sId: stationsInRange) {
-			if(evaluateUtility(stationsMap.getStationById(sId)) <0)
-				negStations.add(sId);
-			else
-				noneNegativeStations.add(sId);
-		}
-		
-		
-		
-		
-		
-		
-		if(positiveStations.size() ==0) {
-			
-//			System.out.println(possibleDirections.size());
-			for(int i=0; i<possibleDirections.size(); ++i) {
-				Direction   dir = possibleDirections.get(i);
-				Position tempNextPos = this.getPosition().nextPosition(dir);
-				for(String negSId: negStations) {
-					double distanceToneg = StationsMap.calcDistance(tempNextPos, stationsMap.getStationById(negSId).getPosition());
-					
-					String closerNonNegativeStation = "";
-					if(noneNegativeStations.size() > 0 ) {
-						closerNonNegativeStation = stationsMap.getClosestStation(noneNegativeStations, tempNextPos);
-						Station safeStation  = stationsMap.getStationById(closerNonNegativeStation);
-						double distanceSaferStation = StationsMap.calcDistance(tempNextPos, safeStation.getPosition());
-						
-						
-						
-						if(distanceToneg <0.00025 && distanceToneg < distanceSaferStation) 
-							removeDirs.add(dir);
-						
-					}
-					else {
-						if(distanceToneg <0.00025) {
-							removeDirs.add(dir);
-						}
-					}
-				}
-			
-			}
-			
-			
-			for(Direction rDir: removeDirs) {
-				possibleDirections.remove(rDir);
-			}
-//			System.out.println(possibleDirections.size());
-			
-			nextDir =possibleDirections.get(rnd.nextInt(possibleDirections.size()));
-			memory.add(nextDir);
-			return nextDir;
-		}else {
-			
-			String nextStation = getNextStation(positiveStations, stationsMap,target_index);
-			Station targetStation  = stationsMap.getStationById(nextStation);
-			noneNegativeStations.remove(nextStation);
-			
-//			System.out.println(noneNegativeStations);
-//			System.out.println(nextStation);
-//			System.out.println(noneNegativeStations);
-//			System.out.println(possibleDirections);
-			for(int i=0; i<possibleDirections.size(); ++i) {
-				Direction   dir = possibleDirections.get(i);
-				for(String negSId: negStations) {
-					Position tempNextPos = this.getPosition().nextPosition(dir);
-					double distanceTotarget = StationsMap.calcDistance(tempNextPos, targetStation.getPosition());
-					double distanceToneg = StationsMap.calcDistance(tempNextPos, stationsMap.getStationById(negSId).getPosition());
-					
-					String closerNonNegativeStation = "";
-					if(noneNegativeStations.size() > 0 ) {
-						closerNonNegativeStation = stationsMap.getClosestStation(noneNegativeStations, tempNextPos);
-						Station safeStation  = stationsMap.getStationById(closerNonNegativeStation);
-						double distanceSaferStation = StationsMap.calcDistance(tempNextPos, safeStation.getPosition());
-						
-//						if(distanceToneg <0.00025 && (distanceToneg < distanceSaferStation || distanceSaferStation < distanceTotarget)) {
-//							removeDirs.add(dir);
-//						}
-//						else
-						
-						
-						
-						if(distanceSaferStation < 0.00025 && distanceTotarget < 0.00025 && distanceSaferStation < distanceTotarget) {
-							removeDirs.add(dir);
-						}
-						if(distanceToneg <0.00025 && distanceSaferStation < 0.00025 && (distanceToneg < distanceSaferStation || distanceSaferStation < distanceTotarget)) {
-							removeDirs.add(dir);
-						}
-						
-						
-	//							
-						 if(distanceToneg <0.00025 && distanceToneg < distanceTotarget) {
-							removeDirs.add(dir);
-						}
-					}
-					else {
-						if(distanceToneg <0.00025 && distanceToneg < distanceTotarget) {
-							removeDirs.add(dir);
-						}
-					}
-					
-					
-				}
-				
-				
-				
-				
-				for(Position pos: voidPlaces) {
-					Position tempNextPos = this.getPosition().nextPosition(dir);
-					double distanceToVoid = StationsMap.calcDistance(tempNextPos, pos);
-					final double epsilon = 0.0001;
-					if(distanceToVoid <epsilon)
-						removeDirs.add(dir);
-				}
-				
-		
-				
-				if(noneNegativeStations.size() > 0 ) {
-					Position tempNextPos = this.getPosition().nextPosition(dir);
-					
-					
-			
-					String closerNonNegativeStation = "";
-					
-						closerNonNegativeStation = stationsMap.getClosestStation(noneNegativeStations, tempNextPos);
-						Station safeStation  = stationsMap.getStationById(closerNonNegativeStation);
-						double distanceSaferStation = StationsMap.calcDistance(tempNextPos, safeStation.getPosition());
-						double distanceTotarget = StationsMap.calcDistance(tempNextPos, targetStation.getPosition());
-					
-					
-						if(distanceSaferStation <0.00025 && distanceTotarget < 0.00025 && distanceSaferStation < distanceTotarget) {
-							removeDirs.add(dir);
-						}
-					
+		return positiveStations;
+	}
 	
-				}
-				
-					
-			
+	private void leadToCycleCheck(Position position, Direction dir, List<Direction> removeDirs) {
+		for(Position pos: voidPlaces) {
+			double distanceToVoid = StationsMap.calcDistance(position, pos);
+			final double epsilon = 0.0001;
+			if(distanceToVoid <epsilon) {
+				removeDirs.add(dir);
 			}
-			
-			
-			
-			
-//			System.out.println(noneNegativeStations.size());
-			
-			
-			for(Direction rDir: removeDirs) {
-				possibleDirections.remove(rDir);
-			}
-			
-			
-			
-			
-			Position currPos = this.getPosition();
-			possibleDirections.sort( new Comparator<Direction>() {
-				@Override
-				public int compare(Direction d1, Direction d2) {
-					double d_to_dest1 = StationsMap.calcDistance(currPos.nextPosition(d1), stationsMap.getStationById(nextStation).getPosition());
-					double d_to_dest2 = StationsMap.calcDistance(currPos.nextPosition(d2), stationsMap.getStationById(nextStation).getPosition());
-					if(d_to_dest1 == d_to_dest2) // TODO .. set epsilon to consider two doubles to be equal
-						return 0;
-					return (d_to_dest1 > d_to_dest2) ? 1:-1;
-				}
-			});
-			
-//			System.out.println(possibleDirections);
-
-			if(possibleDirections.size()==0)
-			{
-//				System.out.println("found here"+possibleDirections.size());
-				dirsCopy.sort( new Comparator<Direction>() {
-					@Override
-					public int compare(Direction d1, Direction d2) {
-						double d_to_dest1 = StationsMap.calcDistance(currPos.nextPosition(d1), stationsMap.getStationById(nextStation).getPosition());
-						double d_to_dest2 = StationsMap.calcDistance(currPos.nextPosition(d2), stationsMap.getStationById(nextStation).getPosition());
-						if(d_to_dest1 == d_to_dest2) // TODO .. set epsilon to consider two doubles to be equal
-							return 0;
-						return (d_to_dest1 > d_to_dest2) ? 1:-1;
-					}
-				});
-				nextDir = dirsCopy.get(0);
-				memory.add(nextDir);
-				return nextDir;	
-			}
-//			if(possibleDirections.size()==2)
-//				n=2;
-//			else if(possibleDirections.size()==3)
-//				n=3;
-//			else if(possibleDirections.size()==4)
-//				n=4;
-//			else if(possibleDirections.size()>5)
-//				n=5;
-			int n=1;
-			if(isCycle() && possibleDirections.size()>1) {
-//				++target_index;
-//				counter=7;
-//				n=possibleDirections.size();
-				System.out.println("Cycled so changed direction from "+possibleDirections.get(0) + "to "+possibleDirections.get(rnd.nextInt(n))+ " where n is equal to"+n  );
-				
-			}
-			
-			if(target_index >0) {
-				n = possibleDirections.size();
-			}
-			
-				
-			nextDir = possibleDirections.get(rnd.nextInt(n));
-			memory.add(nextDir);
-			return nextDir;	
-			
 		}
-		
-		
-		
 	}
 	
 	
-	
-	
-	public String getNextStation(List<String> positiveStations, StationsMap stationsMap, int index) {
+	private String getNextTarget(List<String> positiveStations, StationsMap stationsMap, int index) {
 		positiveStations.sort( new Comparator<String>() {
 			@Override
 			public int compare(String id1, String id2) {
 				
-				double s1_utility = StationsMap.calcDistance(getPosition(), stationsMap.getStationById(id1).getPosition())/evaluateUtility(stationsMap.getStationById(id1));
-				double s2_utility = StationsMap.calcDistance(getPosition(), stationsMap.getStationById(id2).getPosition())/evaluateUtility(stationsMap.getStationById(id2));
+				double s1_utility = StationsMap.calcDistance(getPosition(), stationsMap.getStationById(id1).getPosition())
+						/evaluateUtility(stationsMap.getStationById(id1));
+				double s2_utility = StationsMap.calcDistance(getPosition(), stationsMap.getStationById(id2).getPosition())
+						/evaluateUtility(stationsMap.getStationById(id2));
 				if(s1_utility == s2_utility)
 					return 0;
 				return (s1_utility > s2_utility) ? 1:-1;
@@ -296,37 +158,41 @@ public class StatefulDrone extends Drone {
 			return positiveStations.get(index);
 		else 
 			return positiveStations.get(0);
-		
-//		String nextStation = positiveStations.get(0);
-//		double closestDistance  = StationsMap.calcDistance(this.getPosition(), stationsMap.getStationById(nextStation).getPosition());//evaluateUtility(stationsMap.getStationById(nextStation));
-//		for(String sId: positiveStations) {
-//			double tempDistance = StationsMap.calcDistance(this.getPosition(), stationsMap.getStationById(sId).getPosition());//evaluateUtility(stationsMap.getStationById(sId));
-//			if( tempDistance < closestDistance) {
-//				closestDistance = tempDistance;
-//				nextStation = sId;
-//			}
-//		}
-//			
-//			return nextStation;
+	
+	}
+	
+	private Direction getBestDirection(Position from, Position to, List<Direction> possibleDirections) {
+		possibleDirections.sort( new Comparator<Direction>() {
+			@Override
+			public int compare(Direction d1, Direction d2) {
+				double d_to_dest1 = StationsMap.calcDistance(from.nextPosition(d1), to);
+				double d_to_dest2 = StationsMap.calcDistance(from.nextPosition(d2), to);
+				if(d_to_dest1 == d_to_dest2) // TODO .. set epsilon to consider two doubles to be equal
+					return 0;
+				return (d_to_dest1 > d_to_dest2) ? 1:-1;
+			}
+		});
+		return possibleDirections.get(0);
 	}
 	
   
-	protected double evaluateUtility(Station station) {
+	protected float evaluateUtility(Station station) {
 		
-		return station.getCoins()*moves_counter + station.getPower()/moves_counter;
+		return station.getCoins()*movesCounter + station.getPower()/movesCounter;
 	}
 	
 	
-	public void printMemory() {
-		System.out.println(memory.toString());
-	}
-	
-	
-	private boolean isCycle() {
-		if(memory.size() < 4) return false;
+	private boolean cycleHappened() {
+		if(directionsMemory.size() < 4) return false;
 		else {
-			return memory.get(0)==memory.get(2) && memory.get(1)==memory.get(3) && memory.get(0)!=memory.get(1);
+			return directionsMemory.get(0)==directionsMemory.get(2) && directionsMemory.get(1)==directionsMemory.get(3) && directionsMemory.get(0)!=directionsMemory.get(1);
 		}
 		
 	}
+	
+	public void printMemory() {
+		System.out.println(directionsMemory.toString());
+	}
+	
 }
+

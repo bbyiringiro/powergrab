@@ -1,10 +1,7 @@
 package uk.ac.ed.inf.powergrab;
 
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class StatelessDrone extends Drone {
 	
@@ -15,70 +12,108 @@ public class StatelessDrone extends Drone {
 	
 	@Override
 	public Direction Decide(List<Direction> possibleDirections, StationsMap stationsMap) {
-		Direction nextDir = null;
-		double maxUtility = 0.00001;
+		List<Direction> nextDirs = new ArrayList<>();
+		List<Direction> nextDirs2 = new ArrayList<>();
+		float maxUtility = 0;
+		float maxUtility2 = 0;
 		Direction   leastCostlyDir = null;
-		double leastCost = Double.MAX_VALUE;
+		float leastCost = Float.MAX_VALUE;
 		List<String> stationsInRange;
 		List<Direction> negDirections = new ArrayList<>();
 		for(int i=0; i<possibleDirections.size(); ++i) {
 			Direction   dir = possibleDirections.get(i);
 			Position nextPosition = currentPos.nextPosition(dir);
-			stationsInRange  = stationsMap.getStationsWithIn(nextPosition, 0.00025);
-			if(stationsInRange.size() == 0)continue;
 			
-			System.out.println(stationsInRange.size());
+			stationsInRange  = stationsMap.getStationsWithIn(nextPosition, 0.00025);
+			if(stationsInRange.size() == 0)
+				continue;
 			
 			
 			String closestSId = stationsMap.getClosestStation(stationsInRange, nextPosition);
 			Station closestStation  = stationsMap.getStationById(closestSId);
-			double tempUtility = evaluateUtility(closestStation);
-			if(tempUtility < 0){
+			float closestStationUtility = evaluateUtility(closestStation);
+			
+			float totalPosUtility = getTotalPositiveGain(stationsInRange, stationsMap);
+			
+
+			if(closestStationUtility < 0){
 				negDirections.add(dir);
-				
-				if(tempUtility < leastCost) {
+				if(closestStationUtility < leastCost) {
 					leastCostlyDir = dir;
-					leastCost = tempUtility;
+					leastCost = closestStationUtility;
 					
 				}
 			}
-			else if(tempUtility > maxUtility) {
-				nextDir = dir;
-				maxUtility = tempUtility;
+			else if(closestStationUtility>0) {
+				if(totalPosUtility < maxUtility)
+					continue;
+				else if (totalPosUtility == maxUtility && nextDirs.size()>0)
+					nextDirs.add(dir);
+				else if(totalPosUtility > maxUtility) {
+					nextDirs.clear();
+					nextDirs.add(dir);
+					maxUtility = totalPosUtility;
+				}
+				
+			}else if(closestStationUtility==0) {
+				
+				if(totalPosUtility < maxUtility2)
+					continue;
+				else if (totalPosUtility == maxUtility2 && nextDirs2.size()>0)
+					nextDirs2.add(dir);
+				else if(totalPosUtility > maxUtility2) {
+					nextDirs2.clear();
+					nextDirs2.add(dir);
+					maxUtility2 = totalPosUtility;
+				}
+	
+			}else {
+				continue;
 			}
-			
 		}
-		
-		
-		for(Direction delDir: negDirections) 
-			possibleDirections.remove(delDir);
-		
-		if(nextDir != null) {
-			System.out.println(maxUtility);
-			System.out.println("found best to be this "+nextDir);
-			return nextDir;
-		}else {
-			
-			int n = possibleDirections.size();
-			if(n==0) {
-				System.out.println("trapped the least I can do is " + leastCost);
+		eliminateNegDirections(negDirections, possibleDirections);
+		int n = nextDirs.size();
+		int n2 = nextDirs2.size();
+		if(n !=0)
+			return nextDirs.get(rnd.nextInt(n));
+		else if(n2 != 0)
+			return nextDirs2.get(rnd.nextInt(n2));
+		else {
+			int n_dirs = possibleDirections.size();
+			if(n_dirs==0) {
+				// if all directions have negative utility hence have been removed, chooses the least costly 
+				//this can happen only when the drone is initiated in that particular area, otherwise it would choose a path that leads it there.
 				return leastCostlyDir;
 			}
 			else {
-				System.out.println("Possibility of  "+n+" in 16");
-				return possibleDirections.get(rnd.nextInt(n));
+				System.out.println("Possibility of  "+n_dirs+" in 16");
+				return possibleDirections.get(rnd.nextInt(n_dirs));
 			}
 			
 		}
 
 	}
 
-	// avoid zero devision
-	protected double evaluateUtility(Station station) {
-		return station.getCoins();
+	protected float evaluateUtility(Station station) {
+		return station.getCoins() + station.getPower()/25;
+	}
+	
+	private float getTotalPositiveGain(List<String> stations, StationsMap stationsMap)
+	{
+		// only filters out the positive utility stations because negatives stations will be avoided at all cost, if possible
+		float totalPosUtility = 0f;
+		for(String sId: stations) {
+			Station tempStation  = stationsMap.getStationById(sId);
+			float tempUtilility = evaluateUtility(tempStation);
+			if(tempUtilility>0)
+				totalPosUtility += tempUtilility;
+		}
+		
+		return totalPosUtility;
 	}
 	
 	
 
 
 }
+

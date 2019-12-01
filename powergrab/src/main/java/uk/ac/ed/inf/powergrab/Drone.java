@@ -1,43 +1,35 @@
 package uk.ac.ed.inf.powergrab;
 import java.util.Random;
-import com.mapbox.geojson.Feature;
 import java.util.List;
-import java.util.ArrayList;
 
 abstract class Drone {
-	double power;
-	double powerCoin;
+	float power;
+	float powerCoin;
 	String type;
 	Position currentPos;
 	protected  Random rnd;
-	protected ArrayList<Feature> mapFeatures;
-	
 	
 	public Drone(Position pos, int seed, String type) {
 		currentPos = pos;
 		this.type = type;
 		rnd = new Random(seed);
-		power = 250.0;
-		powerCoin = 0.0;
+		power = 250f;
+		powerCoin = 0f;
 		
 	}
 	
 	abstract public Direction Decide(List<Direction> possibleDirection, StationsMap stationsMap);
-	abstract protected double evaluateUtility(Station station);
+	abstract protected float evaluateUtility(Station station);
 	
-	public double getPower() {
+	public float getPower() {
 		return power;
 	}
-	public double getPowerCoins() {
+	public float getPowerCoins() {
 		return powerCoin;
 	}
-	
-	public String getTyep() {
-		return type;
-	}
-	public void consumedPower(double p) {
+	public void consumedPower(float p) {
 		
-		double temp = power-p;
+		float temp = power-p;
 		if (temp <0)
 			power = 0;
 		else
@@ -53,23 +45,20 @@ abstract class Drone {
 		currentPos = nextPos;
 		return currentPos;	
 	}
-	
+	public String getType() {
+		return type;
+	}
 	public void charge(StationsMap stationsMap) {
 		String sId = stationsMap.getClosestStation(this.getPosition());
-		
 		double distance = StationsMap.calcDistance(this.getPosition(), stationsMap.getStationById(sId).getPosition());
-//		System.out.println(currentPos.toString());
-//		System.out.println(closestStation.geometry().toString());
-//		System.out.println(distance);
-		
 		if(distance >= 0.00025)
 			return;
-		double station_power = stationsMap.getStationById(sId).getPower();
-		double station_coins = stationsMap.getStationById(sId).getCoins();
+		float station_power = stationsMap.getStationById(sId).getPower();
+		float station_coins = stationsMap.getStationById(sId).getCoins();
 		System.out.println("Station -> Coins: "+station_coins+" power: "+station_power);
 		System.out.println("Before Drone -> Coins: "+powerCoin+" power: "+power);
 		// at the station now
-		if(station_coins < 0) {
+		if(station_coins < 0 || station_power < 0) {
 			if ((power + station_power) < 0)
 				stationsMap.getStationById(sId).setPower(this.power + station_power);
 			else
@@ -93,16 +82,16 @@ abstract class Drone {
 	}
 	
 	
-	protected void addPowerCoins(double coins) {
-		double temp = powerCoin + coins;
+	private void addPowerCoins(float coins) {
+		float temp = powerCoin + coins;
 		if (temp<0)
 			powerCoin = 0;
 		else
 			powerCoin = temp;
 	}
 	
-	protected void addPower(double p) {
-		double temp = power + p;
+	private void addPower(float p) {
+		float temp = power + p;
 		if (temp<0)
 			power = 0;
 		else
@@ -110,13 +99,10 @@ abstract class Drone {
 	}
 	
 	
-
 	
-	
+	protected void eliminateNegDirections(List<Direction> negativeDirections, List<Direction> possibleDirections) {
+		for(Direction rDir: negativeDirections)
+			possibleDirections.remove(rDir);
+		
+	}
 }
-
-
-
-
-//logs
-// I changed my positon class to invalid positions to avoid using sets and make this implementation easier
