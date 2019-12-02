@@ -8,13 +8,16 @@ package uk.ac.ed.inf.powergrab;
 public class CommandArgsParser {
 	
 	/** The map date. */
-	private Date mapDate;
+	private StationsMap.MapDate mapDate;
 	
 	/** The start corridinate. */
 	private Position startCorridinate;
 	
 	/** The generator. */
 	private int generator;
+	
+	/** The is stateful. */
+	private String droneType;
 	
 	/** The is stateful. */
 	private boolean isStateful;
@@ -45,17 +48,28 @@ public class CommandArgsParser {
 		if (args.length != 7)
 			throw new Exception("This program need sevenn arguments, format....");
 		
-		mapDate = new Date(args[0],  args[1], args[2]);
+		mapDate = new StationsMap.MapDate(args[0],  args[1], args[2]);
 		startCorridinate =  new Position(Double.parseDouble(args[3]), Double.parseDouble(args[4]));
 		generator = Integer.parseInt((args[5]));
 		
-		if (args[6].equals("stateful"))
+		if (args[6].equals("stateful")) {
+			droneType = "stateful";
 			isStateful = true;
-		else if (args[6].equals("stateless"))
+		}else if (args[6].equals("stateless")) {
+			droneType = "stateless";
 			isStateful = false;
-		else 
+		}else 
 			throw new Exception(args[4] + "state was not recognized, the drone can either be stateless or stateful");
 	
+	}
+	
+	/**
+	 * Gets the drone type.
+	 *
+	 * @return the drone type
+	 */
+	public String getDroneType() {
+		return droneType;
 	}
 	
 	/**
@@ -63,7 +77,7 @@ public class CommandArgsParser {
 	 *
 	 * @return the map date
 	 */
-	public Date getMapDate() {
+	public StationsMap.MapDate getMapDate() {
 		return mapDate;
 	}
 	

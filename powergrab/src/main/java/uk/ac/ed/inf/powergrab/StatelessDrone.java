@@ -2,14 +2,29 @@ package uk.ac.ed.inf.powergrab;
 
 import java.util.ArrayList;
 import java.util.List;
+import uk.ac.ed.inf.powergrab.StationsMap.Station;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class StatelessDrone.
+ */
 public class StatelessDrone extends Drone {
 	
+	/**
+	 * Instantiates a new stateless drone.
+	 *
+	 * @param startPos the start pos
+	 * @param type the type
+	 * @param seed the seed
+	 */
 	public StatelessDrone(Position startPos, String type, int seed) {
 		super(startPos, seed, type);
 	}
 	
 	
+	/* (non-Javadoc)
+	 * @see uk.ac.ed.inf.powergrab.Drone#Decide(java.util.List, uk.ac.ed.inf.powergrab.StationsMap)
+	 */
 	@Override
 	public Direction Decide(List<Direction> possibleDirections, StationsMap stationsMap) {
 		List<Direction> nextDirs = new ArrayList<>();
@@ -33,7 +48,7 @@ public class StatelessDrone extends Drone {
 			Station closestStation  = stationsMap.getStationById(closestSId);
 			float closestStationUtility = evaluateUtility(closestStation);
 			
-			float totalPosUtility = getTotalPositiveGain(stationsInRange, stationsMap);
+			float totalPosUtility = getRegionGain(stationsInRange, stationsMap);
 			
 
 			if(closestStationUtility < 0){
@@ -94,11 +109,21 @@ public class StatelessDrone extends Drone {
 
 	}
 
+	/* (non-Javadoc)
+	 * @see uk.ac.ed.inf.powergrab.Drone#evaluateUtility(uk.ac.ed.inf.powergrab.StationsMap.Station)
+	 */
 	protected float evaluateUtility(Station station) {
 		return station.getCoins() + station.getPower()/25;
 	}
 	
-	private float getTotalPositiveGain(List<String> stations, StationsMap stationsMap)
+	/**
+	 * Gets the region gain.
+	 *
+	 * @param stations the stations
+	 * @param stationsMap the stations map
+	 * @return the region gain
+	 */
+	private float getRegionGain(List<String> stations, StationsMap stationsMap)
 	{
 		// only filters out the positive utility stations because negatives stations will be avoided at all cost, if possible
 		float totalPosUtility = 0f;

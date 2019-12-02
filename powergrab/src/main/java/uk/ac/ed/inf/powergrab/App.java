@@ -7,76 +7,53 @@ import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
 import com.mapbox.geojson.LineString;
 
-//import com.mapbox.geojson.Point;
-//import com.mapbox.geojson.gson.*;
-//import com.mapbox.geojson.
 
+
+// TODO: Auto-generated Javadoc
 /**
- * Hello world!
- *
+ * The Class App.
  */
-
-
-
-
 public class App 
 {
-	public static void print(String s) {
-		System.out.print(s);
-	}
 	
-	public static String formatUrl(Date mapDate, String baseUrl, String geoJsonFile) {
-		String mapDateIndex;
-		if(baseUrl.equals("")) {
-			baseUrl = "http://homepages.inf.ed.ac.uk/stg/powergrab/";
-		}
-		
-		if(geoJsonFile.equals("")) {
-			geoJsonFile = "powergrabmap.geojson";
-		}
-		
-		if (mapDate == null) {
-			mapDateIndex = "";
-		}
-		else
-			mapDateIndex =  mapDate.formatDate("", true)+"/";
-		
-		return baseUrl +mapDateIndex+geoJsonFile;
-	}
+	/** The Constant POWER_COST_PER_MOVE. */
+	static final float POWER_COST_PER_MOVE = -1.25f;
 	
+    /**
+     * The main method.
+     *
+     * @param args the arguments
+     */
     public static void main( String[] args )
     {
     	CommandArgsParser  arguments = new CommandArgsParser(args);
     	
-    	Date mapDate = arguments.getMapDate();
+    	StationsMap.MapDate mapDate = arguments.getMapDate();
     	Position startPos = arguments.getStartCorridinate();
     	int generator = arguments.getGenerator();
     	boolean isStateful = arguments.isStateful();
-    	String mapUrl = formatUrl(mapDate, "", "");
-    	
-    	
-
+    	String mapUrl = HelperFunctions.formatUrl(mapDate, "", "");
+  
+    	StationsMap stationsMap = new StationsMap(mapUrl, mapDate);
     	Drone currDrone;
     	if (isStateful)
-    		currDrone =  new StatefulDrone(startPos, "stateful", generator);
+    		currDrone =  new StatefulDrone(startPos, arguments.getDroneType(), generator);
     	else
-    		currDrone =  new StatelessDrone(startPos, "stateless", generator);
+    		currDrone =  new StatelessDrone(startPos, arguments.getDroneType(), generator);
     	
-
-    	int moves=1;
     	
-    	StationsMap stationsMap = new StationsMap(mapUrl);
     	List<Point> path = new ArrayList<>();
+    	int moves=1;
     	path.add(Point.fromLngLat(currDrone.getPosition().getLongitude(), currDrone.getPosition().getLatitude()));
     	String logs = "";
-    	while(moves <= 250 && currDrone.getPower() >= 1.25) {
-    		print(moves+"th steps\n");
+    	while(moves <= 250 && currDrone.getPower() >= POWER_COST_PER_MOVE) {
+    		System.out.println(moves+"th steps\n");
     		String logLine="";
     		// inspect the map, and current position
     		Position dronePosition = currDrone.getPosition();
     		logLine += dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", ";
     		// allowable moves
-    		List<Direction> possibleMoveDir = stationsMap.getPossibleMoves(dronePosition);
+    		List<Direction> possibleMoveDir = currDrone.inspectDirections(stationsMap);
     		if(possibleMoveDir.size() == 0)
     			break;
     		
@@ -85,11 +62,11 @@ public class App
     		System.out.println(nextDir);
     		// Move
     		currDrone.move(nextDir);
+    		currDrone.addPower(POWER_COST_PER_MOVE); 
+    		++ moves;
     		//Charge
     		currDrone.charge(stationsMap);
     		
-    		++ moves;
-    		currDrone.consumedPower(1.25f); 
     		
     		
     		
@@ -101,7 +78,7 @@ public class App
     		
     		
     		
-    		print("----------------------------------------------------------------------------------------------\n");
+    		System.out.println("----------------------------------------------------------------------------------------------\n");
     		
     	}
     	
@@ -121,8 +98,8 @@ public class App
     	mapSource = out.toJson();
     	
     	String filename = currDrone.getType() +"-"+mapDate.formatDate("-", false);
-    	Logger.saveJson(mapSource, filename);
-    	Logger.saveLogs(logs, filename);
+    	HelperFunctions.saveJson(mapSource, filename);
+    	HelperFunctions.saveLogs(logs, filename);
     	
 
     	

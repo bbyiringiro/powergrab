@@ -1,14 +1,36 @@
 package uk.ac.ed.inf.powergrab;
 import java.util.Random;
 import java.util.List;
+import uk.ac.ed.inf.powergrab.StationsMap.Station;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Drone.
+ */
 abstract class Drone {
-	float power;
-	float powerCoin;
+	
+	/** The power. */
+	private float power;
+	
+	/** The power coin. */
+	private float powerCoin;
+	
+	/** The type. */
 	String type;
+	
+	/** The current pos. */
 	Position currentPos;
+	
+	/** The rnd. */
 	protected  Random rnd;
 	
+	/**
+	 * Instantiates a new drone.
+	 *
+	 * @param pos the pos
+	 * @param seed the seed
+	 * @param type the type
+	 */
 	public Drone(Position pos, int seed, String type) {
 		currentPos = pos;
 		this.type = type;
@@ -18,36 +40,86 @@ abstract class Drone {
 		
 	}
 	
+	/**
+	 * Decide.
+	 *
+	 * @param possibleDirection the possible direction
+	 * @param stationsMap the stations map
+	 * @return the direction
+	 */
 	abstract public Direction Decide(List<Direction> possibleDirection, StationsMap stationsMap);
+	
+	/**
+	 * Evaluate utility.
+	 *
+	 * @param station the station
+	 * @return the float
+	 */
 	abstract protected float evaluateUtility(Station station);
 	
+	/**
+	 * Inspect directions.
+	 *
+	 * @param stationsMap the stations map
+	 * @return the list
+	 */
+	protected List<Direction> inspectDirections(StationsMap stationsMap){
+		return stationsMap.getPossibleMoves(getPosition());
+	}
+	
+	/**
+	 * Gets the power.
+	 *
+	 * @return the power
+	 */
 	public float getPower() {
 		return power;
 	}
+	
+	/**
+	 * Gets the power coins.
+	 *
+	 * @return the power coins
+	 */
 	public float getPowerCoins() {
 		return powerCoin;
 	}
-	public void consumedPower(float p) {
-		
-		float temp = power-p;
-		if (temp <0)
-			power = 0;
-		else
-			power -= p;
-
-	}
+	
+	/**
+	 * Gets the position.
+	 *
+	 * @return the position
+	 */
 	public Position getPosition() {
 		return currentPos;
 	}
 	
+	/**
+	 * Move.
+	 *
+	 * @param to the to
+	 * @return the position
+	 */
 	public Position move(Direction to) {
 		Position nextPos = currentPos.nextPosition(to);
 		currentPos = nextPos;
 		return currentPos;	
 	}
+	
+	/**
+	 * Gets the type.
+	 *
+	 * @return the type
+	 */
 	public String getType() {
 		return type;
 	}
+	
+	/**
+	 * Charge.
+	 *
+	 * @param stationsMap the stations map
+	 */
 	public void charge(StationsMap stationsMap) {
 		String sId = stationsMap.getClosestStation(this.getPosition());
 		double distance = StationsMap.calcDistance(this.getPosition(), stationsMap.getStationById(sId).getPosition());
@@ -82,6 +154,11 @@ abstract class Drone {
 	}
 	
 	
+	/**
+	 * Adds the power coins.
+	 *
+	 * @param coins the coins
+	 */
 	private void addPowerCoins(float coins) {
 		float temp = powerCoin + coins;
 		if (temp<0)
@@ -90,7 +167,14 @@ abstract class Drone {
 			powerCoin = temp;
 	}
 	
-	private void addPower(float p) {
+	
+	
+	/**
+	 * Adds the power.
+	 *
+	 * @param p the p
+	 */
+	public void addPower(float p) {
 		float temp = power + p;
 		if (temp<0)
 			power = 0;
@@ -100,7 +184,13 @@ abstract class Drone {
 	
 	
 	
-	protected void eliminateNegDirections(List<Direction> negativeDirections, List<Direction> possibleDirections) {
+	/**
+	 * Eliminate neg directions.
+	 *
+	 * @param negativeDirections the negative directions
+	 * @param possibleDirections the possible directions
+	 */
+	static protected void eliminateNegDirections(List<Direction> negativeDirections, List<Direction> possibleDirections) {
 		for(Direction rDir: negativeDirections)
 			possibleDirections.remove(rDir);
 		
