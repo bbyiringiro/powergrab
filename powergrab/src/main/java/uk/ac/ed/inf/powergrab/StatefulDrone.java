@@ -4,27 +4,31 @@ import java.util.ArrayList;
 import java.util.List;
 import uk.ac.ed.inf.powergrab.StationsMap.Station;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class StatefulDrone.
+ * represents a sophisticated limitless drones that avoid negative stations 
+ * and try to collect as many coins as it can it a limited time, which is achieved by the strategy mentioned above.
+
+ * 
  */
 public class StatefulDrone extends Drone {
 	
 	/** The direction memory size. */
 	final int DIRECTION_MEMORY_SIZE = 4;
 	
-	/** The directions memory. */
+	/** The directions memory describing pas moves recent moves */
 	private EvictingQueue<Direction> directionsMemory;
 	
-	/** The moves counter. */
+	/** The number of moves so far */
 	private int movesCounter = 0;
 	
 	/** The void places memory. */
 	private List<Position> voidPlacesMemory;
 	
 	/**
-	 * The Class EvictingQueue.
-	 *
+	 * Inner class
+	 * EvictingQueue Data Structure .
+	 * 
 	 * @param <K> the key type
 	 */
 	private class EvictingQueue<K> extends ArrayList<K> {
@@ -44,7 +48,8 @@ public class StatefulDrone extends Drone {
 	        this.maxSize = size;
 	    }
 
-	    /* (non-Javadoc)
+	    /* 
+	     * pops the oldest element when the size reaches the maxSize
     	 * @see java.util.ArrayList#add(java.lang.Object)
     	 */
     	public boolean add(K k){
@@ -69,7 +74,9 @@ public class StatefulDrone extends Drone {
 		voidPlacesMemory = new ArrayList<>();
 	}
 	
-	/* (non-Javadoc)
+	/* 
+	 * Implements the drone strategy described in the documentation. Please refer to it to understand this better.
+	 *  
 	 * @see uk.ac.ed.inf.powergrab.Drone#Decide(java.util.List, uk.ac.ed.inf.powergrab.StationsMap)
 	 */
 	@Override
@@ -148,10 +155,10 @@ public class StatefulDrone extends Drone {
 	}
 	
 	/**
-	 * Scan remaining stations.
+	 * Scan remaining  unvisited positive stations.
 	 *
 	 * @param stationsMap the stations map
-	 * @return the list
+	 * @return the list of unvisited positive stations
 	 */
 	protected List<String> scanRemainingStations(StationsMap stationsMap){
 		List<String> positiveStations = new ArrayList<>();
@@ -169,7 +176,8 @@ public class StatefulDrone extends Drone {
 	}
 	
 	/**
-	 * Cause cycle check.
+	 * determines if a particular directions at particular position will cause a cycle when a drone goes to a position in voidPlacesMemory filed,
+	 *  if adds to the directions that should be avoided.
 	 *
 	 * @param position the position
 	 * @param dir the dir
@@ -188,7 +196,8 @@ public class StatefulDrone extends Drone {
 	
 	/**
 	 * Gets the next target.
-	 *
+	 * return the id of the best station to visit of a least cost and that also maximises utility.
+
 	 * @param positiveStations the positive stations
 	 * @param stationsMap the stations map
 	 * @return the next target
@@ -211,7 +220,8 @@ public class StatefulDrone extends Drone {
 		return best_target;
 	}
   
-	/* (non-Javadoc)
+	/* 
+	 * calculate the utility of station at a particular time
 	 * @see uk.ac.ed.inf.powergrab.Drone#evaluateUtility(uk.ac.ed.inf.powergrab.StationsMap.Station)
 	 */
 	protected float evaluateUtility(Station station) {
@@ -223,6 +233,10 @@ public class StatefulDrone extends Drone {
 	
 	/**
 	 * Cycle happened.
+	 * return true if a cycle have happened, given that directions memory only keeps four directions.
+	 * It determine when a drone has made four consecutive alternative moves only two types 
+	 * (for example, N, S, N, S is cycle, but NNNN and NSSN are not)
+
 	 *
 	 * @return true, if successful
 	 */

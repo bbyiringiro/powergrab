@@ -1,24 +1,17 @@
 package uk.ac.ed.inf.powergrab;
+
 import java.util.List;
 import java.util.ArrayList;
-
-import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
-import com.mapbox.geojson.LineString;
-
-
-
-// TODO: Auto-generated Javadoc
 /**
- * The Class App.
+ * The Class App contains the main process that runs and controls  the drones through their APIs
+ * It also instantiate the map objects and calls functions that save files.
  */
 public class App 
 {
-	
-	/** The Constant POWER_COST_PER_MOVE. */
+	/** The Constants of power consumed per move and maximum number of allowed moves*/
 	static final float POWER_COST_PER_MOVE = -1.25f;
-	
+	static final int MAX_NUMBER_OF_MOVES = 250;
     /**
      * The main method.
      *
@@ -26,83 +19,67 @@ public class App
      */
     public static void main( String[] args )
     {
+    	/** parses the command line input and initialises all required variables with appropriate representation */
     	CommandArgsParser  arguments = new CommandArgsParser(args);
-    	
     	StationsMap.MapDate mapDate = arguments.getMapDate();
     	Position startPos = arguments.getStartCorridinate();
     	int generator = arguments.getGenerator();
     	boolean isStateful = arguments.isStateful();
-    	String mapUrl = HelperFunctions.formatUrl(mapDate, "", "");
-  
+    	
+    	// initialises and download the map of stations 
+    	String mapUrl = StationsMap.formatMapUrl(mapDate, "", "");
     	StationsMap stationsMap = new StationsMap(mapUrl, mapDate);
+    	
+    	// instantiate a drone depending on type passed in the command arguments 
     	Drone currDrone;
     	if (isStateful)
     		currDrone =  new StatefulDrone(startPos, arguments.getDroneType(), generator);
     	else
     		currDrone =  new StatelessDrone(startPos, arguments.getDroneType(), generator);
     	
-    	
+    	// list point to hold path the drone takes
     	List<Point> path = new ArrayList<>();
-    	int moves=1;
-    	path.add(Point.fromLngLat(currDrone.getPosition().getLongitude(), currDrone.getPosition().getLatitude()));
+    	path.add(Point.fromLngLat(
+    			currDrone.getPosition().getLongitude(), 
+    			currDrone.getPosition().getLatitude())
+    			);
+    	// variable to hold the moves a drone makes and number of gains at each step
     	String logs = "";
-    	while(moves <= 250 && currDrone.getPower() >= POWER_COST_PER_MOVE) {
-    		System.out.println(moves+"th steps\n");
-    		String logLine="";
-    		// inspect the map, and current position
-    		Position dronePosition = currDrone.getPosition();
-    		logLine += dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", ";
-    		// allowable moves
-    		List<Direction> possibleMoveDir = currDrone.inspectDirections(stationsMap);
-    		if(possibleMoveDir.size() == 0)
-    			break;
+    	int moves=1;
+    	while(moves <= MAX_NUMBER_OF_MOVES && currDrone.getPower() >= POWER_COST_PER_MOVE) {
+    		String movesLogLine="";
     		
+    		// inspect the map and get current position and legal moves
+    		Position dronePosition = currDrone.getPosition();
+    		movesLogLine += dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", ";
+    		List<Direction> possibleMoveDir = currDrone.inspectDirections(stationsMap);
+    		if(possibleMoveDir.size() == 0) // only happen if a only is initialised out of the range position
+    			break;
     		// Decide
     		Direction nextDir = currDrone.Decide(possibleMoveDir, stationsMap);
-    		System.out.println(nextDir);
     		// Move
     		currDrone.move(nextDir);
     		currDrone.addPower(POWER_COST_PER_MOVE); 
     		++ moves;
     		//Charge
     		currDrone.charge(stationsMap);
-    		
-    		
-    		
-    		
-    		
-    		
-    		path.add(Point.fromLngLat(currDrone.getPosition().getLongitude(), currDrone.getPosition().getLatitude()));
-    		logLine +=nextDir + ", " +dronePosition.getLatitude() + ", "+ dronePosition.getLongitude() +", "+currDrone.getPowerCoins()+", "+currDrone.getPower();
-    		logs +=logLine+"\n";
-    		
-    		
-    		
-    		System.out.println("----------------------------------------------------------------------------------------------\n");
+    		path.add(Point.fromLngLat(
+    				currDrone.getPosition().getLongitude(), 
+    				currDrone.getPosition().getLatitude())
+    				);
+    		movesLogLine +=nextDir + ", "
+    				+dronePosition.getLatitude() + ", "
+    				+ dronePosition.getLongitude() +", "
+    				+currDrone.getPowerCoins()+", "
+    				+currDrone.getPower();
+    		logs +=movesLogLine+"\n";
     		
     	}
-    	
-    	System.out.println("Finished with PowerCoin:"+ currDrone.getPowerCoins() + " Power: "+currDrone.getPower());
-    	System.out.print("moves :"+ (moves-1));
-    	
-    	LineString pathLineStrign = LineString.fromLngLats(path);
-    	
-    	String mapSource = stationsMap.getMapSource();
-    	
-    	
-    	Feature outFeature = Feature.fromGeometry(pathLineStrign);
-    	FeatureCollection fc = FeatureCollection.fromJson(mapSource);
-    	List<Feature> features = (ArrayList<Feature>) fc.features();
-    	features.add(outFeature);
-    	FeatureCollection out = FeatureCollection.fromFeatures(features);
-    	mapSource = out.toJson();
-    	
-    	String filename = currDrone.getType() +"-"+mapDate.formatDate("-", false);
-    	HelperFunctions.saveJson(mapSource, filename);
-    	HelperFunctions.saveLogs(logs, filename);
-    	
-
-    	
-    	
+    	// merges the drone path to the original map source then save them geoJSO files and .txt file for the path logs
+    	String finalGeoJsonMap = StationsMap.mergePathToMap(stationsMap, path);
+    	String filename = IOUtils.generateFileName(currDrone, stationsMap.mapDate);
+    	IOUtils.saveJson(finalGeoJsonMap, filename);
+    	IOUtils.saveLogs(logs, filename);
+   
     }
 }

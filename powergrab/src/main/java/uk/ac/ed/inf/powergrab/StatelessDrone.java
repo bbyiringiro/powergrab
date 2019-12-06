@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import uk.ac.ed.inf.powergrab.StationsMap.Station;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class StatelessDrone.
+ * represents a stateless drone that is limited in number look aheads of moves  it can make 
+ * and can’t remember the number or kind  of moves it previously made
  */
 public class StatelessDrone extends Drone {
 	
@@ -22,19 +23,23 @@ public class StatelessDrone extends Drone {
 	}
 	
 	
-	/* (non-Javadoc)
+	/* 
+	 * Given the legal moves, it decide the best directions to move to by choosing the best moves that takes it to an area of maximum utility
+	 * even if it won't it might not get utility directly
+	 *  if there no stations within its next possible moves, it chooses randomly among the legal directions
 	 * @see uk.ac.ed.inf.powergrab.Drone#Decide(java.util.List, uk.ac.ed.inf.powergrab.StationsMap)
 	 */
 	@Override
 	public Direction Decide(List<Direction> possibleDirections, StationsMap stationsMap) {
-		List<Direction> nextDirs = new ArrayList<>();
+		List<Direction> nextDirs = new ArrayList<>(); // 
 		List<Direction> nextDirs2 = new ArrayList<>();
-		float maxUtility = 0;
-		float maxUtility2 = 0;
+		float maxAreaUtility = 0; // holds the utility of the drones will get direct
+		float secondChoiceAreaUtility = 0; // utility of going in an area even if if the closest is not positive station.
 		Direction   leastCostlyDir = null;
 		float leastCost = Float.MAX_VALUE;
 		List<String> stationsInRange;
 		List<Direction> negDirections = new ArrayList<>();
+		
 		for(int i=0; i<possibleDirections.size(); ++i) {
 			Direction   dir = possibleDirections.get(i);
 			Position nextPosition = currentPos.nextPosition(dir);
@@ -60,26 +65,26 @@ public class StatelessDrone extends Drone {
 				}
 			}
 			else if(closestStationUtility>0) {
-				if(totalPosUtility < maxUtility)
+				if(totalPosUtility < maxAreaUtility)
 					continue;
-				else if (totalPosUtility == maxUtility && nextDirs.size()>0)
+				else if (totalPosUtility == maxAreaUtility && nextDirs.size()>0)
 					nextDirs.add(dir);
-				else if(totalPosUtility > maxUtility) {
+				else if(totalPosUtility > maxAreaUtility) {
 					nextDirs.clear();
 					nextDirs.add(dir);
-					maxUtility = totalPosUtility;
+					maxAreaUtility = totalPosUtility;
 				}
 				
 			}else if(closestStationUtility==0) {
 				
-				if(totalPosUtility < maxUtility2)
+				if(totalPosUtility < secondChoiceAreaUtility)
 					continue;
-				else if (totalPosUtility == maxUtility2 && nextDirs2.size()>0)
+				else if (totalPosUtility == secondChoiceAreaUtility && nextDirs2.size()>0)
 					nextDirs2.add(dir);
-				else if(totalPosUtility > maxUtility2) {
+				else if(totalPosUtility > secondChoiceAreaUtility) {
 					nextDirs2.clear();
 					nextDirs2.add(dir);
-					maxUtility2 = totalPosUtility;
+					secondChoiceAreaUtility = totalPosUtility;
 				}
 	
 			}else {
@@ -97,11 +102,11 @@ public class StatelessDrone extends Drone {
 			int n_dirs = possibleDirections.size();
 			if(n_dirs==0) {
 				// if all directions have negative utility hence have been removed, chooses the least costly 
-				//this can happen only when the drone is initiated in that particular area, otherwise it would choose a path that leads it there.
+				//this can happen only when the drone is initiated in that particular area, 
+				//otherwise it would choose a path that leads it there.
 				return leastCostlyDir;
 			}
 			else {
-				System.out.println("Possibility of  "+n_dirs+" in 16");
 				return possibleDirections.get(rnd.nextInt(n_dirs));
 			}
 			
@@ -109,7 +114,8 @@ public class StatelessDrone extends Drone {
 
 	}
 
-	/* (non-Javadoc)
+	/* 
+	 * calculate the stations utility favouring coins over the power as it is memory less: it does not know the state of the game
 	 * @see uk.ac.ed.inf.powergrab.Drone#evaluateUtility(uk.ac.ed.inf.powergrab.StationsMap.Station)
 	 */
 	protected float evaluateUtility(Station station) {
@@ -133,7 +139,6 @@ public class StatelessDrone extends Drone {
 			if(tempUtilility>0)
 				totalPosUtility += tempUtilility;
 		}
-		
 		return totalPosUtility;
 	}
 	

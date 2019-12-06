@@ -1,11 +1,11 @@
 package uk.ac.ed.inf.powergrab;
+
 import java.util.Random;
 import java.util.List;
 import uk.ac.ed.inf.powergrab.StationsMap.Station;
 
-// TODO: Auto-generated Javadoc
 /**
- * The Class Drone.
+ * The Class Drone, is an abstract class all drones should inherit and implement the below abstract functions
  */
 abstract class Drone {
 	
@@ -15,21 +15,21 @@ abstract class Drone {
 	/** The power coin. */
 	private float powerCoin;
 	
-	/** The type. */
+	/** The drone type. */
 	String type;
 	
-	/** The current pos. */
+	/** The current position of a drone. */
 	Position currentPos;
 	
-	/** The rnd. */
+	/** The random seed. */
 	protected  Random rnd;
 	
 	/**
 	 * Instantiates a new drone.
-	 *
-	 * @param pos the pos
-	 * @param seed the seed
-	 * @param type the type
+	 * constructor for the drones that takes its initial position on the map, random generator seed, and the type of the drone
+	 * @param drone the starting position in a map
+	 * @param seed the random seed generator 
+	 * @param type the type of the drone.
 	 */
 	public Drone(Position pos, int seed, String type) {
 		currentPos = pos;
@@ -41,19 +41,20 @@ abstract class Drone {
 	}
 	
 	/**
-	 * Decide.
+	 * Decide, decides on the direction of the next move a drone can make.
 	 *
-	 * @param possibleDirection the possible direction
+	 * @param possibleDirection the legal directions a drone can move to
 	 * @param stationsMap the stations map
-	 * @return the direction
+	 * @return the direction, of the next move a drone can make
 	 */
 	abstract public Direction Decide(List<Direction> possibleDirection, StationsMap stationsMap);
 	
 	/**
-	 * Evaluate utility.
+	 *  function to be implemented by each drone to determine the utility of station depends on 
+	 *  how a particular drone evaluate it.
 	 *
-	 * @param station the station
-	 * @return the float
+	 * @param station, the station object
+	 * @return the float of evaluation of utility of a particular station
 	 */
 	abstract protected float evaluateUtility(Station station);
 	
@@ -61,14 +62,14 @@ abstract class Drone {
 	 * Inspect directions.
 	 *
 	 * @param stationsMap the stations map
-	 * @return the list
+	 * @return the list of legal directions can be after the current possition
 	 */
 	protected List<Direction> inspectDirections(StationsMap stationsMap){
 		return stationsMap.getPossibleMoves(getPosition());
 	}
 	
 	/**
-	 * Gets the power.
+	 * Gets the drone's power.
 	 *
 	 * @return the power
 	 */
@@ -95,9 +96,9 @@ abstract class Drone {
 	}
 	
 	/**
-	 * Move.
+	 * Move, given a direction, it moves a drone to a given direction by 0.003 degree
 	 *
-	 * @param to the to
+	 * @param to the direction to move to
 	 * @return the position
 	 */
 	public Position move(Direction to) {
@@ -107,7 +108,7 @@ abstract class Drone {
 	}
 	
 	/**
-	 * Gets the type.
+	 * Gets the type of the drone, either stateless or stateful.
 	 *
 	 * @return the type
 	 */
@@ -116,9 +117,11 @@ abstract class Drone {
 	}
 	
 	/**
-	 * Charge.
+	 * Charge, handle the charging of a drone to nearest stations among all stations .
+	 * Handles the negatives power or coins of station outweigh the drone's current power or coins
 	 *
 	 * @param stationsMap the stations map
+	 * @return void
 	 */
 	public void charge(StationsMap stationsMap) {
 		String sId = stationsMap.getClosestStation(this.getPosition());
@@ -127,35 +130,25 @@ abstract class Drone {
 			return;
 		float station_power = stationsMap.getStationById(sId).getPower();
 		float station_coins = stationsMap.getStationById(sId).getCoins();
-		System.out.println("Station -> Coins: "+station_coins+" power: "+station_power);
-		System.out.println("Before Drone -> Coins: "+powerCoin+" power: "+power);
-		// at the station now
-		if(station_coins < 0 || station_power < 0) {
-			if ((power + station_power) < 0)
-				stationsMap.getStationById(sId).setPower(this.power + station_power);
-			else
-				stationsMap.getStationById(sId).setPower(0);
-			
-			if ((powerCoin + station_coins) < 0)
-				stationsMap.getStationById(sId).setCoins(this.powerCoin + station_coins);
-			else
-				stationsMap.getStationById(sId).setCoins(0);
-		}
-		else {
-			stationsMap.getStationById(sId).setCoins(0);
+		
+		if ((power + station_power) < 0)
+			stationsMap.getStationById(sId).setPower(this.power + station_power);
+		else
 			stationsMap.getStationById(sId).setPower(0);
 			
-		}
+			
+		if ((powerCoin + station_coins) < 0)
+			stationsMap.getStationById(sId).setCoins(this.powerCoin + station_coins);
+		else
+			stationsMap.getStationById(sId).setCoins(0);
 		
-		addPower(station_power);
+		// the following functions are the ones that prevent the drone from having negative power or coins.
+		addPower(station_power); 
 		addPowerCoins(station_coins);
-		System.out.println("After Drone -> Coins: "+powerCoin+" power: "+power);
-		System.out.println("After Station -> Coins: "+stationsMap.getStationById(sId).getCoins()+" power: "+stationsMap.getStationById(sId).getPower());
-	}
-	
-	
+		}
 	/**
-	 * Adds the power coins.
+	 * Adds the power coins
+	 * It avoids for drone having negative coins.
 	 *
 	 * @param coins the coins
 	 */
@@ -167,11 +160,9 @@ abstract class Drone {
 			powerCoin = temp;
 	}
 	
-	
-	
 	/**
 	 * Adds the power.
-	 *
+	 * Avoids for drone having negative power
 	 * @param p the p
 	 */
 	public void addPower(float p) {
@@ -182,17 +173,16 @@ abstract class Drone {
 			power = temp;
 	}
 	
-	
-	
 	/**
-	 * Eliminate neg directions.
+	 * Eliminates negative directions (negativeDirections) in given directions. They are all passed by reference.
 	 *
-	 * @param negativeDirections the negative directions
-	 * @param possibleDirections the possible directions
+	 * @param negativeDirections the negative directions to remove from directions
+	 * @param directions the possible directions
+	 * 
 	 */
-	static protected void eliminateNegDirections(List<Direction> negativeDirections, List<Direction> possibleDirections) {
+	static protected void eliminateNegDirections(List<Direction> negativeDirections, List<Direction> directions) {
 		for(Direction rDir: negativeDirections)
-			possibleDirections.remove(rDir);
+			directions.remove(rDir);
 		
 	}
 }

@@ -15,15 +15,18 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class StationsMap.
+ * represents a map that holds the position of all stations and stores their states as well as the position of drone. 
+ * It handles all functions related to calculating distances, 
+ * locations of stations, directions, downloading and merging maps among others.
  */
 public class StationsMap {
 	
-	/** The stations. */
+	/** The stations, (key->values = StationId->Station) */
 	private Map<String, Station> stations;
 	
 	/** The map source. */
@@ -32,8 +35,15 @@ public class StationsMap {
 	/** The map date. */
 	final MapDate mapDate;
 	
+	/** The default MAP_BASE_URL. */
+	final static String MAP_BASE_URL = "http://homepages.inf.ed.ac.uk/stg/powergrab/";
+	
+	/** The default filename of the geoJson map. */
+	final static String MAP_FILE_NAME = "powergrabmap.geojson";
+	
 	/**
-	 * The Class Station.
+	 * The Inner Class Station.
+	 * Holds information about the stations in the map
 	 */
 	static public class Station {
 		
@@ -138,18 +148,18 @@ public class StationsMap {
 		/**
 		 * Instantiates a new map date.
 		 *
-		 * @param d the d
-		 * @param m the m
-		 * @param y the y
+		 * @param day the day
+		 * @param month the month
+		 * @param year the year
 		 */
-		public MapDate(String d,String m, String y)
+		public MapDate(String day,String month, String year)
 		{
-			day = d;
-			month = m;
-			year = y;
+			this.day = day;
+			this.month = month;
+			this.year = year;
 		}
 		
-		/* (non-Javadoc)
+		/* 
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -158,7 +168,7 @@ public class StationsMap {
 		}
 		
 		/**
-		 * Format date.
+		 * Format date. either in reverse format and/or with a particular delimiters
 		 *
 		 * @param delimiter the delimiter
 		 * @param reverse the reverse
@@ -179,7 +189,7 @@ public class StationsMap {
 	/**
 	 * Instantiates a new stations map.
 	 *
-	 * @param mapUrl the map url
+	 * @param mapUrl the map URL
 	 * @param date the date
 	 */
 	public StationsMap(String mapUrl, MapDate date) {
@@ -188,9 +198,9 @@ public class StationsMap {
 	}
 	
 	/**
-	 * Load map.
+	 *  downloads the map and initialises stations member of StationsMap object
 	 *
-	 * @param mapUrl the map url
+	 * @param mapUrl the map URL
 	 * @return the string
 	 */
 	private String loadMap(String mapUrl) {
@@ -219,7 +229,7 @@ public class StationsMap {
 
 	
 	/**
-	 * Gets the stations with in.
+	 * return all stations ids within a given range from that particular position
 	 *
 	 * @param dronePosition the drone position
 	 * @param range the range
@@ -238,7 +248,8 @@ public class StationsMap {
 	}
 	
 	 /**
- 	 * Gets the stations with in.
+ 	 * an overload functions that return stations ids of all stations
+ 	 *  in given station list within a particular range from a given position
  	 *
  	 * @param stations the stations
  	 * @param dronePosition the drone position
@@ -258,7 +269,7 @@ public class StationsMap {
 	}
 	
 	/**
-	 * Gets the station by id.
+	 * return a Station object given its id.
 	 *
 	 * @param stationId the station id
 	 * @return the station by id
@@ -271,7 +282,7 @@ public class StationsMap {
 	}
 	
 	/**
-	 * Gets the closest station.
+	 * Gets the closest station in all stations from at particular position.
 	 *
 	 * @param position the position
 	 * @return the closest station
@@ -295,9 +306,8 @@ public class StationsMap {
 	}
 	
 	
-	
 	/**
-	 * Gets the closest station.
+	 * Gets the closest station in given station from a particular position
 	 *
 	 * @param stations the stations
 	 * @param position the position
@@ -322,7 +332,7 @@ public class StationsMap {
 	}
 	
 	/**
-	 * Gets the map source.
+	 * Gets the original string of map.
 	 *
 	 * @return the map source
 	 */
@@ -360,6 +370,7 @@ public class StationsMap {
 	/**
 	 * Gets the direction to.
 	 *
+	 *return the best directions that that takes one from ‘from’ position to ‘to’ position.
 	 * @param from the from
 	 * @param to the to
 	 * @param directions the directions
@@ -382,10 +393,10 @@ public class StationsMap {
 	}
 	
 	/**
-	 * Calc distance.
+	 * calculate the distance between position distance.
 	 *
-	 * @param pos1 the pos 1
-	 * @param pos2 the pos 2
+	 * @param pos1 the position 1
+	 * @param pos2 the position 2
 	 * @return the double
 	 */
 	public static double calcDistance(Position pos1, Position pos2) {
@@ -395,7 +406,7 @@ public class StationsMap {
 	}
 	
 	/**
-	 * Downlaod map.
+	 * given a URL it return json string of the map on the url
 	 *
 	 * @param url the url
 	 * @return the string
@@ -405,40 +416,66 @@ public class StationsMap {
 	public static String downlaodMap(String url) throws MalformedURLException, IOException {
 		
 		InputStream inputStream;
-//		try 
-//		{
-			URL mapUrl = new URL(url);
-			HttpURLConnection request = (HttpURLConnection) mapUrl.openConnection();
-			request.setReadTimeout(10000); // milliseconds
-			request.setConnectTimeout(15000); // milliseconds
-			request.setRequestMethod("GET");
-			request.setDoInput(true);
-			request.connect();
-//			try
-			inputStream = request.getInputStream();
-			JsonParser jp = new JsonParser();
-			JsonElement root = jp.parse(new InputStreamReader(inputStream));
-			
-			String mapSource = root.toString();
-			inputStream.close();
-//			catch
-			
-			
-			
-			return mapSource;
-//		}
-//		catch(MalformedURLException e) 
-//		{
-//			
-//		}
-//		catch (IOException e) {
-//			// TODO: handle exception
-//		}
-//		finally 
-//		{
-//			
-//		}
+		URL mapUrl = new URL(url);
+		HttpURLConnection request = (HttpURLConnection) mapUrl.openConnection();
+		request.setReadTimeout(10000); 
+		request.setConnectTimeout(15000);
+		request.setRequestMethod("GET");
+		request.setDoInput(true);
+		request.connect();
+		inputStream = request.getInputStream();
+		JsonParser jp = new JsonParser();
+		JsonElement root = jp.parse(new InputStreamReader(inputStream));
 		
+		String mapSource = root.toString();
+		inputStream.close();
+		return mapSource;
+		
+	}
+	
+	
+	/**
+	 *  format the URL on which to download the map
+	 *
+	 * @param mapDate the map date
+	 * @param baseUrl the base url
+	 * @param geoJsonFile the geo json file
+	 * @return the string
+	 */
+	public static String formatMapUrl(StationsMap.MapDate mapDate, String baseUrl, String geoJsonFile) {
+		String mapDateIndex;
+		//not given URL, it uses the default
+		if(baseUrl.equals("")) {
+			baseUrl = MAP_BASE_URL;
+		}
+		if(geoJsonFile.equals("")) {
+			geoJsonFile = MAP_FILE_NAME;
+		}
+		
+		if (mapDate == null) {
+			mapDateIndex = "";
+		}
+		else
+			mapDateIndex =  mapDate.formatDate("", true)+"/";
+		
+		return baseUrl +mapDateIndex+geoJsonFile;
+	}
+	
+	/**
+	 * Merge path to map.
+	 *takes geoJson and list of points and create a LineString and adds it to the geoJson of the map
+	 * @param stationsMap the stations map
+	 * @param path the path
+	 * @return the string
+	 */
+	public static String mergePathToMap(StationsMap stationsMap, List<Point> path) {
+		LineString pathLineStrign = LineString.fromLngLats(path);
+    	Feature outFeature = Feature.fromGeometry(pathLineStrign);
+    	FeatureCollection fc = FeatureCollection.fromJson(stationsMap.getMapSource());
+    	List<Feature> features = (ArrayList<Feature>) fc.features();
+    	features.add(outFeature);
+    	FeatureCollection out = FeatureCollection.fromFeatures(features);
+    	return out.toJson();
 	}
 	
 	

@@ -1,25 +1,24 @@
 package uk.ac.ed.inf.powergrab;
 
-
-// TODO: Auto-generated Javadoc
 /**
- * The Class CommandParser.
+ * The Class CommandParser parses and validates the command arguments 
+ * passed to the run the drone simulation.
  */
 public class CommandArgsParser {
 	
-	/** The map date. */
+	/**  The date of the map. */
 	private StationsMap.MapDate mapDate;
 	
-	/** The start corridinate. */
+	/** The initial drone's starting position. */
 	private Position startCorridinate;
 	
-	/** The generator. */
+	/** The random seed generating number. */
 	private int generator;
 	
-	/** The is stateful. */
+	/**  The drone type to use. */
 	private String droneType;
 	
-	/** The is stateful. */
+	/** Check whether the drone is the stateful or stateless. */
 	private boolean isStateful;
 	
 	
@@ -33,33 +32,48 @@ public class CommandArgsParser {
 		try {
 			parse(args);
 		}
-		catch (Exception e) {
-			System.out.print(e);
+		catch (IllegalArgumentException e) {
+			throw e;
 		}
 	}
 	
 	/**
-	 * Parses the.
+	 * Validates and Parses the command arguments.
 	 *
 	 * @param args the args
-	 * @throws Exception the exception
+	 * @throws IllegalArgumentException the illegal argument exception
 	 */
-	private void parse(String args[]) throws Exception {
+	private void parse(String args[]) throws IllegalArgumentException {
 		if (args.length != 7)
-			throw new Exception("This program need sevenn arguments, format....");
+			throw new IllegalArgumentException("The argumment should be in this format"
+					+ "dd mm yyyy latitude longitute randomGenerator droneType");
+		for(int i =0; i<args.length-1; ++i)
+			if(!isAllowedNumeric(args[i])) {
+				throw new IllegalArgumentException("The argumment should be of the format"
+						+ "dd mm yyyy latitude longitute randomGenerator droneType");
+			}
 		
-		mapDate = new StationsMap.MapDate(args[0],  args[1], args[2]);
+		// validates the arguments
+		String day = args[0].length() == 1 ? '0'+args[0]:args[0];
+		String month = args[1].length() == 1 ? '0'+args[1]:args[1];
+		String year = args[2];
+		if(day.length()> 2 || month.length() > 2 || year.length() > 4)
+			throw new IllegalArgumentException("First 3 arguments for date "
+					+ "should have the format: dd mm yyyy");
+		mapDate = new StationsMap.MapDate(day,  month, year);
 		startCorridinate =  new Position(Double.parseDouble(args[3]), Double.parseDouble(args[4]));
 		generator = Integer.parseInt((args[5]));
 		
-		if (args[6].equals("stateful")) {
-			droneType = "stateful";
+		String dType =args[6].toLowerCase();
+		if (dType.equals("stateful")) {
+			droneType = dType;
 			isStateful = true;
-		}else if (args[6].equals("stateless")) {
-			droneType = "stateless";
+		}else if (dType.equals("stateless")) {
+			droneType = dType;
 			isStateful = false;
 		}else 
-			throw new Exception(args[4] + "state was not recognized, the drone can either be stateless or stateful");
+			throw new IllegalArgumentException(args[4] + "the drone type can "
+					+ " either be stateless or stateful, not" +args[4]);
 	
 	}
 	
@@ -82,9 +96,9 @@ public class CommandArgsParser {
 	}
 	
 	/**
-	 * Gets the start corridinate.
+	 * Gets the starting coordinate.
 	 *
-	 * @return the start corridinate
+	 * @return the start coordinate
 	 */
 	public Position getStartCorridinate() {
 		return startCorridinate;
@@ -106,6 +120,34 @@ public class CommandArgsParser {
 	 */
 	public int getGenerator() {
 		return generator;
+	}
+	
+	
+	/**
+	 * Checks helper function to check if a string is 2-4 digit number or floating numbers.
+	 *
+	 * @param str the str
+	 * @return true, if is allowed numeric
+	 */
+	private static boolean isAllowedNumeric(final String str) {
+		if(str.length() > 4) {
+			try {
+				Double.parseDouble(str);
+				return true;
+			}catch(NumberFormatException e) {
+				return false;
+			}
+		}else {
+			try {
+				Integer.parseInt(str);
+				return true;
+			}catch(NumberFormatException e) {
+				return false;
+			}
+		}
+		
+		
+		
 	}
 	
 }
