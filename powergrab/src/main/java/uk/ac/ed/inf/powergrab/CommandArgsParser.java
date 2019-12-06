@@ -60,6 +60,15 @@ public class CommandArgsParser {
 		if(day.length()> 2 || month.length() > 2 || year.length() > 4)
 			throw new IllegalArgumentException("First 3 arguments for date "
 					+ "should have the format: dd mm yyyy");
+		
+//		int d = Integer.parseInt(day);
+//		int m = Integer.parseInt(month);
+//		int y = Integer.parseInt(year);
+//
+//		if((d<1 || d>31) || (m<1 || m>12) || y <0)
+//		throw new IllegalArgumentException("The date should in correct range, please use"
+//		+ "dd mm yyyy");
+		
 		mapDate = new StationsMap.MapDate(day,  month, year);
 		startCorridinate =  new Position(Double.parseDouble(args[3]), Double.parseDouble(args[4]));
 		generator = Integer.parseInt((args[5]));

@@ -211,8 +211,10 @@ public class StationsMap {
     		stringifiedMap = downlaodMap(mapUrl);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
+			System.exit(1);
 		} catch (IOException e) {
 			e.printStackTrace();
+			System.exit(1);
 		}
     	fc  = FeatureCollection.fromJson(stringifiedMap);
 		for(Feature f: fc.features()) {
